@@ -96,6 +96,55 @@ class Minter(sp.Contract):
             destination=fa2_mint_handle)
 
     @sp.entry_point
+    def mint_multiple(self, params):
+        """Mints several new FA2 tokens at once. The minter and the creator are assumed to be
+        the same person.
+
+        """
+        # Define the input parameter data type
+        sp.set_type(params, sp.TRecord(
+            editions=sp.TNat,
+            metadata=sp.TMap(sp.TString, sp.TBytes),
+            data=sp.TMap(sp.TString, sp.TBytes),
+            royalties=sp.TNat).layout(
+                ("editions", ("metadata", ("data", "royalties")))))
+
+        # Check that the contract is not paused
+        sp.verify(~self.data.paused, message="MINT_PAUSED")
+
+        # Check that the number of editions is not zero
+        sp.verify(params.editions != 0, message="MINT_ZERO_EDITIONS")
+
+        # Check that the creator royalties are less than 25%
+        sp.verify(params.royalties <= 250, message="MINT_INVALID_ROYALTIES")
+
+        # Get a handle on the FA2 contract mint entry point
+        fa2_mint_handle = sp.contract(
+            t=sp.TRecord(
+                amount=sp.TNat,
+                metadata=sp.TMap(sp.TString, sp.TBytes),
+                data=sp.TMap(sp.TString, sp.TBytes),
+                royalties=sp.TRecord(
+                    minter=Minter.USER_ROYALTIES_TYPE,
+                    creator=Minter.USER_ROYALTIES_TYPE).layout(
+                        ("minter", "creator"))).layout(
+                            ("amount", ("metadata", ("data", "royalties")))),
+            address=self.data.fa2,
+            entry_point="mintMultiple").open_some()
+
+        # Mint the token
+        sp.transfer(
+            arg=sp.record(
+                amount=params.editions,
+                metadata=params.metadata,
+                data=params.data,
+                royalties=sp.record(
+                    minter=sp.record(address=sp.sender, royalties=0),
+                    creator=sp.record(address=sp.sender, royalties=params.royalties))),
+            amount=sp.mutez(0),
+            destination=fa2_mint_handle)
+
+    @sp.entry_point
     def transfer_administrator(self, proposed_administrator):
         """Proposes to transfer the contract administrator to another address.
 
@@ -197,6 +246,6 @@ class Minter(sp.Contract):
 
 
 sp.add_compilation_target("minter", Minter(
-    administrator=sp.address("tz1M9CMEtsXm3QxA7FmMU2Qh7xzsuGXVbcDr"),
+    administrator=sp.address("tz1ahsDNFzukj51hVpW626qH7Ug9HeUVQDNG"),
     metadata=sp.utils.metadata_of_url("ipfs://aaa"),
-    fa2=sp.address("KT1M9CMEtsXm3QxA7FmMU2Qh7xzsuGXVbcDr")))
+    fa2=sp.address("KT1Tc6ZCKMPkEj3j9CT9UH97iDvdXYmsDYRM")))
