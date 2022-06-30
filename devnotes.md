@@ -16,17 +16,11 @@ deploy / originate contracts
 tz1ahsDNFzukj51hVpW626qH7Ug9HeUVQDNG ithacanet testnet account
 Use it in fa2.py and minter.py as the administrator address
 
-FA2 contract on ithacanet: KT1K8PuvnELqTot5PF3jEcAZrVzaMimQT2fT
+FA2 contract on ithacanet: KT1Tc6ZCKMPkEj3j9CT9UH97iDvdXYmsDYRM
 Use it in minter.py as fa2 contract
 
-minter contract on ithacanet: KT1G6jWxhSzs7qYP2rumDEdxdNA6EEuzot6F 
+minter contract on ithacanet: KT1TvD8HX5B83CJbZa6LDnABC6KiXgyGy5rM 
 Call it from Taquito !!
-
-
-NEW : FA2 with multipleMint on ithacanet: KT1Tc6ZCKMPkEj3j9CT9UH97iDvdXYmsDYRM
-Use it in a dedicated minter.py as fa2 contract
-
-NEW: minter ith multipleMint on ithacanet: KT1TvD8HX5B83CJbZa6LDnABC6KiXgyGy5rM
 
 
 After Deploying the contracts, we need to set the minter contract as the admin of the FA2 contract. 
