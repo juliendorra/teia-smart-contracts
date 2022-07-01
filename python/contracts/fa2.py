@@ -1,3 +1,4 @@
+from typing import Collection
 import smartpy as sp
 
 
@@ -65,6 +66,15 @@ class FA2(sp.Contract):
             supply=sp.TBigMap(sp.TNat, sp.TNat),
             # The big map with the tokens metadata
             token_metadata=sp.TBigMap(sp.TNat, FA2.TOKEN_METADATA_VALUE_TYPE),
+
+            # Collection managament: storing the base url only once for a whole collection
+            # The big map with the tokens collection IDs
+            token_collection=sp.TBigMap(
+                sp.TNat, sp.TNat),
+            # The big map with the collection base url
+            collection_base_url=sp.TBigMap(
+                sp.TNat, sp.TBytes),
+
             # The big map with the tokens data (source code, description, etc)
             token_data=sp.TBigMap(sp.TNat, sp.TMap(sp.TString, sp.TBytes)),
             # The big map with the tokens royalties for the minter and creators
@@ -75,7 +85,9 @@ class FA2(sp.Contract):
             # The proposed new administrator address
             proposed_administrator=sp.TOption(sp.TAddress),
             # A counter that tracks the total number of tokens minted so far
-            counter=sp.TNat))
+            counter=sp.TNat,
+            # A counter that tracks the total number of collections
+            collection_counter=sp.TNat))
 
         # Initialize the contract storage
         self.init(
@@ -84,11 +96,14 @@ class FA2(sp.Contract):
             ledger=sp.big_map(),
             supply=sp.big_map(),
             token_metadata=sp.big_map(),
+            token_collection=sp.big_map(),
+            collection_base_url=sp.big_map(),
             token_data=sp.big_map(),
             token_royalties=sp.big_map(),
             operators=sp.big_map(),
             proposed_administrator=sp.none,
-            counter=0)
+            counter=0,
+            collection_counter=0)
 
         # Build the TZIP-016 contract metadata
         # This is helpful to get the off-chain views code in json format
@@ -135,43 +150,8 @@ class FA2(sp.Contract):
         """
         sp.verify(token_id < self.data.counter, message="FA2_TOKEN_UNDEFINED")
 
-    @sp.entry_point
-    def mint(self, params):
-        """Mints a new token.
-
-        """
-        # Define the input parameter data type
-        sp.set_type(params, sp.TRecord(
-            amount=sp.TNat,
-            metadata=sp.TMap(sp.TString, sp.TBytes),
-            data=sp.TMap(sp.TString, sp.TBytes),
-            royalties=FA2.TOKEN_ROYALTIES_VALUE_TYPE).layout(
-                ("amount", ("metadata", ("data", "royalties")))))
-
-        # Check that the administrator executed the entry point
-        self.check_is_administrator()
-
-        # Check that the total royalties do not exceed 100%
-        sp.verify(params.royalties.minter.royalties +
-                  params.royalties.creator.royalties <= 1000,
-                  message="FA2_INVALID_ROYALTIES")
-
-        # Update the big maps
-        token_id = sp.compute(self.data.counter)
-        self.data.ledger[
-            (params.royalties.minter.address, token_id)] = params.amount
-        self.data.supply[token_id] = params.amount
-        self.data.token_metadata[token_id] = sp.record(
-            token_id=token_id,
-            token_info=params.metadata)
-        self.data.token_data[token_id] = params.data
-        self.data.token_royalties[token_id] = params.royalties
-
-        # Increase the tokens counter
-        self.data.counter += 1
-
-    @sp.entry_point
-    def mint_multiple(self, params):
+    @ sp.entry_point
+    def mint_collection(self, params):
         """Mints several new tokens at once.
 
         """
@@ -191,6 +171,11 @@ class FA2(sp.Contract):
                   params.royalties.creator.royalties <= 1000,
                   message="FA2_INVALID_ROYALTIES")
 
+        # the base url is stored once in the collection map for all the tokens in this collection
+        collection_id = sp.compute(self.data.collection_counter)
+
+        self.data.collection_base_url[collection_id] = params.data["base"]
+
         # Loop over the list of metadata
         with sp.for_("metadataBytes", params.metadata.values()) as metadataBytes:
             # Update the big maps
@@ -200,13 +185,25 @@ class FA2(sp.Contract):
             self.data.supply[token_id] = params.amount
             self.data.token_metadata[token_id] = sp.record(
                 token_id=token_id,
-                token_info={"": metadataBytes}
+                token_info={"name": metadataBytes}
             )
-            self.data.token_data[token_id] = params.data
+
+            # Store this token collection id to be able to get the base url later
+            self.data.token_collection[token_id] = collection_id
+
+            # We don't want to store any data at this point
+            # self.data.token_data[token_id] = sp.record(
+            #     token_id=token_id,
+            #     token_info={}
+            # )
+
             self.data.token_royalties[token_id] = params.royalties
 
             # Increase the tokens counter
             self.data.counter += 1
+
+        # Increase the collection counter
+        self.data.collection_counter += 1
 
     @ sp.entry_point
     def transfer(self, params):
@@ -442,8 +439,21 @@ class FA2(sp.Contract):
         # Check that the token exists
         self.check_token_exists(token_id)
 
+        # Get the collection id from the collection map
+        collection_id = self.data.token_collection[token_id]
+
+        name = self.data.token_metadata[token_id].token_info["name"]
+
+        base = self.data.collection_base_url[collection_id]
+
+        token_metadata_record = sp.record(
+            token_id=token_id,
+            token_info={"": base+name}
+        )
+
         # Return the token metadata
-        sp.result(self.data.token_metadata[token_id])
+        # sp.result(self.data.token_metadata[token_id]) ## returns the whole TOKEN_METADATA_VALUE_TYPE record/struct
+        sp.result(token_metadata_record)
 
     @ sp.onchain_view(pure=True)
     def token_data(self, token_id):
