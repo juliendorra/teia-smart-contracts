@@ -67,7 +67,7 @@ class FA2(sp.Contract):
             # The big map with the tokens metadata
             token_metadata=sp.TBigMap(sp.TNat, FA2.TOKEN_METADATA_VALUE_TYPE),
 
-            # Collection managament: storing the base url only once for a whole collection
+            # Collection management: storing the base url only once for a whole collection
             # The big map with the tokens collection IDs
             token_collection=sp.TBigMap(
                 sp.TNat, sp.TNat),
