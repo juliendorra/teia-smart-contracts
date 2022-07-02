@@ -199,4 +199,4 @@ class Minter(sp.Contract):
 sp.add_compilation_target("minter", Minter(
     administrator=sp.address("tz1ahsDNFzukj51hVpW626qH7Ug9HeUVQDNG"),
     metadata=sp.utils.metadata_of_url("ipfs://aaa"),
-    fa2=sp.address("KT1Tc6ZCKMPkEj3j9CT9UH97iDvdXYmsDYRM")))
+    fa2=sp.address("KT1FMPj5zs2KBFVLcMgwmpcUtoL5CmRfYFr6")))
