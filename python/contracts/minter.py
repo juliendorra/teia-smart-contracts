@@ -81,7 +81,7 @@ class Minter(sp.Contract):
                         ("minter", "creator"))).layout(
                             ("amount", ("metadata", ("data", "royalties")))),
             address=self.data.fa2,
-            entry_point="mint_multiple").open_some()
+            entry_point="mint_collection").open_some()
 
         # Mint the token
         sp.transfer(
@@ -199,4 +199,4 @@ class Minter(sp.Contract):
 sp.add_compilation_target("minter", Minter(
     administrator=sp.address("tz1ahsDNFzukj51hVpW626qH7Ug9HeUVQDNG"),
     metadata=sp.utils.metadata_of_url("ipfs://aaa"),
-    fa2=sp.address("KT1FMPj5zs2KBFVLcMgwmpcUtoL5CmRfYFr6")))
+    fa2=sp.address("KT1VybRPQMBDX5CqBgsSgXdqjGxZneTnFN82")))
