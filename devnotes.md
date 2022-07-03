@@ -3,6 +3,11 @@ cd python
 ~/smartpy-cli/SmartPy.sh test tests/fa2_test.py ../output/tests/fa2 --html --purge
 ~/smartpy-cli/SmartPy.sh test tests/minter_test.py ../output/tests/minter --html --purge
 
+### off chain views for FA2: metadata file
+compile, 
+upload step_000_cont_0_metadata.contract_metadata.json to IPFS
+add ipfs link in FA2 compilation target metadata
+
 ### deploy / originate contracts
 
 ~/smartpy-cli/SmartPy.sh compile python/contracts/fa2.py output/contracts/fa2 --html --purge
@@ -20,10 +25,10 @@ Once originated, change the FA2 contract address in the Minter contract, compile
 tz1ahsDNFzukj51hVpW626qH7Ug9HeUVQDNG ithacanet testnet account
 Use it in fa2.py and minter.py as the administrator address
 
-FA2 contract on ithacanet: KT1FMPj5zs2KBFVLcMgwmpcUtoL5CmRfYFr6
+FA2 contract on ithacanet: KT1VybRPQMBDX5CqBgsSgXdqjGxZneTnFN82
 Use it in minter.py as fa2 contract
 
-minter contract on ithacanet: KT1UGKNCbtQE7yTAH71CpNyCPRs3kBy4b8Vd 
+Minter contract on ithacanet:  KT1DZa6ZdMK8cVpuuLJg2K3Mspz44keWU6tK
 Call it from Taquito !!
 
 
