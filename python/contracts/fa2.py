@@ -65,7 +65,7 @@ class FA2(sp.Contract):
             # The tokens total supply
             supply=sp.TBigMap(sp.TNat, sp.TNat),
             # The big map with the tokens metadata
-            token_metadata=sp.TBigMap(sp.TNat, FA2.TOKEN_METADATA_VALUE_TYPE),
+            token_name=sp.TBigMap(sp.TNat, FA2.TOKEN_METADATA_VALUE_TYPE),
 
             # Collection management: storing the base url only once for a whole collection
             # The big map with the tokens collection IDs
@@ -95,7 +95,7 @@ class FA2(sp.Contract):
             metadata=metadata,
             ledger=sp.big_map(),
             supply=sp.big_map(),
-            token_metadata=sp.big_map(),
+            token_name=sp.big_map(),
             token_collection=sp.big_map(),
             collection_base_url=sp.big_map(),
             token_data=sp.big_map(),
@@ -108,9 +108,9 @@ class FA2(sp.Contract):
         # Build the TZIP-016 contract metadata
         # This is helpful to get the off-chain views code in json format
         contract_metadata = {
-            "name": "Extended FA2 template contract",
-            "description": "This contract tries to simplify and extend the "
-            "FA2 contract template example in smartpy.io v0.9.1",
+            "name": "Extended FA2 template contract with collections",
+            "description": "This contract allows for batch minting of collections. "
+            "Based on Teia Community extended FA2 contract",
             "version": "v1.0.0",
             "authors": ["Teia Community <https://twitter.com/TeiaCommunity>"],
             "homepage": "https://teia.art",
@@ -183,7 +183,7 @@ class FA2(sp.Contract):
             self.data.ledger[
                 (params.royalties.minter.address, token_id)] = params.amount
             self.data.supply[token_id] = params.amount
-            self.data.token_metadata[token_id] = sp.record(
+            self.data.token_name[token_id] = sp.record(
                 token_id=token_id,
                 token_info={"name": metadataBytes}
             )
@@ -442,7 +442,7 @@ class FA2(sp.Contract):
         # Get the collection id from the collection map
         collection_id = self.data.token_collection[token_id]
 
-        name = self.data.token_metadata[token_id].token_info["name"]
+        name = self.data.token_name[token_id].token_info["name"]
 
         base = self.data.collection_base_url[collection_id]
 
@@ -480,4 +480,4 @@ class FA2(sp.Contract):
 
 sp.add_compilation_target("fa2", FA2(
     administrator=sp.address("tz1ahsDNFzukj51hVpW626qH7Ug9HeUVQDNG"),
-    metadata=sp.utils.metadata_of_url("ipfs://aaa")))
+    metadata=sp.utils.metadata_of_url("ipfs://bafkreidiyntyl3sdaxi3tfetcpde4xfo554o4lkvatixuuxhhfywb2ut7m")))
