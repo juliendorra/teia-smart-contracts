@@ -4,9 +4,17 @@ cd python
 ~/smartpy-cli/SmartPy.sh test tests/minter_test.py ../output/tests/minter --html --purge
 
 ### off chain views for FA2: metadata file
-compile, 
-upload step_000_cont_0_metadata.contract_metadata.json to IPFS
-add ipfs link in FA2 compilation target metadata
+
+If you made any changes to the views in FA2 contract : 
+
+ - compile the contract once
+  ~/smartpy-cli/SmartPy.sh compile python/contracts/fa2.py output/contracts/fa2 --html --purge
+
+ - upload step_000_cont_0_metadata.contract_metadata.json to IPFS, note ipfs link (ipfs://[CID])
+  
+ -  add ipfs link to FA2 compilation target metadata
+  
+ - then compile again and deploy
 
 ### deploy / originate contracts
 
@@ -25,10 +33,10 @@ Once originated, change the FA2 contract address in the Minter contract, compile
 tz1ahsDNFzukj51hVpW626qH7Ug9HeUVQDNG ithacanet testnet account
 Use it in fa2.py and minter.py as the administrator address
 
-FA2 contract on ithacanet: KT1VybRPQMBDX5CqBgsSgXdqjGxZneTnFN82
+FA2 contract on ithacanet: KT1KEXGUwzPq7bZpHBVfnd493dmQe25RijHi
 Use it in minter.py as fa2 contract
 
-Minter contract on ithacanet:  KT1DZa6ZdMK8cVpuuLJg2K3Mspz44keWU6tK
+Minter contract on ithacanet:  KT1USDMmhbKnBtHLj9DW9vubHrgqDbqffzy4
 Call it from Taquito !!
 
 
