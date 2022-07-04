@@ -65,7 +65,7 @@ class FA2(sp.Contract):
             # The tokens total supply
             supply=sp.TBigMap(sp.TNat, sp.TNat),
             # The big map with the tokens metadata
-            token_name=sp.TBigMap(sp.TNat, FA2.TOKEN_METADATA_VALUE_TYPE),
+            token_name=sp.TBigMap(sp.TNat, sp.TBytes),
 
             # Collection management: storing the base url only once for a whole collection
             # The big map with the tokens collection IDs
@@ -77,8 +77,8 @@ class FA2(sp.Contract):
 
             # The big map with the tokens data (source code, description, etc)
             token_data=sp.TBigMap(sp.TNat, sp.TMap(sp.TString, sp.TBytes)),
-            # The big map with the tokens royalties for the minter and creators
-            token_royalties=sp.TBigMap(
+            # The big map with the collection royalties for the minter and creators
+            collection_royalties=sp.TBigMap(
                 sp.TNat, FA2.TOKEN_ROYALTIES_VALUE_TYPE),
             # The big map with the tokens operators
             operators=sp.TBigMap(FA2.OPERATOR_KEY_TYPE, sp.TUnit),
@@ -99,7 +99,7 @@ class FA2(sp.Contract):
             token_collection=sp.big_map(),
             collection_base_url=sp.big_map(),
             token_data=sp.big_map(),
-            token_royalties=sp.big_map(),
+            collection_royalties=sp.big_map(),
             operators=sp.big_map(),
             proposed_administrator=sp.none,
             counter=0,
@@ -176,6 +176,8 @@ class FA2(sp.Contract):
 
         self.data.collection_base_url[collection_id] = params.data["base"]
 
+        self.data.collection_royalties[collection_id] = params.royalties
+
         # Loop over the list of metadata
         with sp.for_("metadataBytes", params.metadata.values()) as metadataBytes:
             # Update the big maps
@@ -183,10 +185,7 @@ class FA2(sp.Contract):
             self.data.ledger[
                 (params.royalties.minter.address, token_id)] = params.amount
             self.data.supply[token_id] = params.amount
-            self.data.token_name[token_id] = sp.record(
-                token_id=token_id,
-                token_info={"name": metadataBytes}
-            )
+            self.data.token_name[token_id] = metadataBytes
 
             # Store this token collection id to be able to get the base url later
             self.data.token_collection[token_id] = collection_id
@@ -196,8 +195,6 @@ class FA2(sp.Contract):
             #     token_id=token_id,
             #     token_info={}
             # )
-
-            self.data.token_royalties[token_id] = params.royalties
 
             # Increase the tokens counter
             self.data.counter += 1
@@ -442,7 +439,7 @@ class FA2(sp.Contract):
         # Get the collection id from the collection map
         collection_id = self.data.token_collection[token_id]
 
-        name = self.data.token_name[token_id].token_info["name"]
+        name = self.data.token_name[token_id]
 
         base = self.data.collection_base_url[collection_id]
 
@@ -452,7 +449,6 @@ class FA2(sp.Contract):
         )
 
         # Return the token metadata
-        # sp.result(self.data.token_metadata[token_id]) ## returns the whole TOKEN_METADATA_VALUE_TYPE record/struct
         sp.result(token_metadata_record)
 
     @ sp.onchain_view(pure=True)
@@ -474,10 +470,13 @@ class FA2(sp.Contract):
         # Define the input parameter data type
         sp.set_type(token_id, sp.TNat)
 
+        # Get the collection id from the collection map
+        collection_id = self.data.token_collection[token_id]
+
         # Return the token royalties information
-        sp.result(self.data.token_royalties[token_id])
+        sp.result(self.data.collection_royalties[collection_id])
 
 
 sp.add_compilation_target("fa2", FA2(
     administrator=sp.address("tz1ahsDNFzukj51hVpW626qH7Ug9HeUVQDNG"),
-    metadata=sp.utils.metadata_of_url("ipfs://bafkreidiyntyl3sdaxi3tfetcpde4xfo554o4lkvatixuuxhhfywb2ut7m")))
+    metadata=sp.utils.metadata_of_url("ipfs://bafkreibesxwqay2qqk6ikecx4z6idi5m77pwm6sg4wecxdzthxbg726id4")))
