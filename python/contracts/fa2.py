@@ -1,3 +1,4 @@
+from operator import length_hint
 from typing import Collection
 import smartpy as sp
 
@@ -65,7 +66,7 @@ class FA2(sp.Contract):
             # The tokens total supply
             supply=sp.TBigMap(sp.TNat, sp.TNat),
             # The big map with the tokens metadata
-            token_name=sp.TBigMap(sp.TNat, sp.TBytes),
+            token_name=sp.TBigMap(sp.TNat, sp.TNat),
 
             # Collection management: storing the base url only once for a whole collection
             # The big map with the tokens collection IDs
@@ -87,7 +88,9 @@ class FA2(sp.Contract):
             # A counter that tracks the total number of tokens minted so far
             counter=sp.TNat,
             # A counter that tracks the total number of collections
-            collection_counter=sp.TNat))
+            collection_counter=sp.TNat,
+            token_name_map=sp.TMap(sp.TNat, sp.TBytes)
+        ))
 
         # Initialize the contract storage
         self.init(
@@ -103,7 +106,267 @@ class FA2(sp.Contract):
             operators=sp.big_map(),
             proposed_administrator=sp.none,
             counter=0,
-            collection_counter=0)
+            collection_counter=0,
+            token_name_map={
+                0: sp.bytes("0x30"),
+                1: sp.bytes("0x31"),
+                2: sp.bytes("0x32"),
+                3: sp.bytes("0x33"),
+                4: sp.bytes("0x34"),
+                5: sp.bytes("0x35"),
+                6: sp.bytes("0x36"),
+                7: sp.bytes("0x37"),
+                8: sp.bytes("0x38"),
+                9: sp.bytes("0x39"),
+                10: sp.bytes("0x3130"),
+                11: sp.bytes("0x3131"),
+                12: sp.bytes("0x3132"),
+                13: sp.bytes("0x3133"),
+                14: sp.bytes("0x3134"),
+                15: sp.bytes("0x3135"),
+                16: sp.bytes("0x3136"),
+                17: sp.bytes("0x3137"),
+                18: sp.bytes("0x3138"),
+                19: sp.bytes("0x3139"),
+                20: sp.bytes("0x3230"),
+                21: sp.bytes("0x3231"),
+                22: sp.bytes("0x3232"),
+                23: sp.bytes("0x3233"),
+                24: sp.bytes("0x3234"),
+                25: sp.bytes("0x3235"),
+                26: sp.bytes("0x3236"),
+                27: sp.bytes("0x3237"),
+                28: sp.bytes("0x3238"),
+                29: sp.bytes("0x3239"),
+                30: sp.bytes("0x3330"),
+                31: sp.bytes("0x3331"),
+                32: sp.bytes("0x3332"),
+                33: sp.bytes("0x3333"),
+                34: sp.bytes("0x3334"),
+                35: sp.bytes("0x3335"),
+                36: sp.bytes("0x3336"),
+                37: sp.bytes("0x3337"),
+                38: sp.bytes("0x3338"),
+                39: sp.bytes("0x3339"),
+                40: sp.bytes("0x3430"),
+                41: sp.bytes("0x3431"),
+                42: sp.bytes("0x3432"),
+                43: sp.bytes("0x3433"),
+                44: sp.bytes("0x3434"),
+                45: sp.bytes("0x3435"),
+                46: sp.bytes("0x3436"),
+                47: sp.bytes("0x3437"),
+                48: sp.bytes("0x3438"),
+                49: sp.bytes("0x3439"),
+                50: sp.bytes("0x3530"),
+                51: sp.bytes("0x3531"),
+                52: sp.bytes("0x3532"),
+                53: sp.bytes("0x3533"),
+                54: sp.bytes("0x3534"),
+                55: sp.bytes("0x3535"),
+                56: sp.bytes("0x3536"),
+                57: sp.bytes("0x3537"),
+                58: sp.bytes("0x3538"),
+                59: sp.bytes("0x3539"),
+                60: sp.bytes("0x3630"),
+                61: sp.bytes("0x3631"),
+                62: sp.bytes("0x3632"),
+                63: sp.bytes("0x3633"),
+                64: sp.bytes("0x3634"),
+                65: sp.bytes("0x3635"),
+                66: sp.bytes("0x3636"),
+                67: sp.bytes("0x3637"),
+                68: sp.bytes("0x3638"),
+                69: sp.bytes("0x3639"),
+                70: sp.bytes("0x3730"),
+                71: sp.bytes("0x3731"),
+                72: sp.bytes("0x3732"),
+                73: sp.bytes("0x3733"),
+                74: sp.bytes("0x3734"),
+                75: sp.bytes("0x3735"),
+                76: sp.bytes("0x3736"),
+                77: sp.bytes("0x3737"),
+                78: sp.bytes("0x3738"),
+                79: sp.bytes("0x3739"),
+                80: sp.bytes("0x3830"),
+                81: sp.bytes("0x3831"),
+                82: sp.bytes("0x3832"),
+                83: sp.bytes("0x3833"),
+                84: sp.bytes("0x3834"),
+                85: sp.bytes("0x3835"),
+                86: sp.bytes("0x3836"),
+                87: sp.bytes("0x3837"),
+                88: sp.bytes("0x3838"),
+                89: sp.bytes("0x3839"),
+                90: sp.bytes("0x3930"),
+                91: sp.bytes("0x3931"),
+                92: sp.bytes("0x3932"),
+                93: sp.bytes("0x3933"),
+                94: sp.bytes("0x3934"),
+                95: sp.bytes("0x3935"),
+                96: sp.bytes("0x3936"),
+                97: sp.bytes("0x3937"),
+                98: sp.bytes("0x3938"),
+                99: sp.bytes("0x3939"),
+                100: sp.bytes("0x313030"),
+                101: sp.bytes("0x313031"),
+                102: sp.bytes("0x313032"),
+                103: sp.bytes("0x313033"),
+                104: sp.bytes("0x313034"),
+                105: sp.bytes("0x313035"),
+                106: sp.bytes("0x313036"),
+                107: sp.bytes("0x313037"),
+                108: sp.bytes("0x313038"),
+                109: sp.bytes("0x313039"),
+                110: sp.bytes("0x313130"),
+                111: sp.bytes("0x313131"),
+                112: sp.bytes("0x313132"),
+                113: sp.bytes("0x313133"),
+                114: sp.bytes("0x313134"),
+                115: sp.bytes("0x313135"),
+                116: sp.bytes("0x313136"),
+                117: sp.bytes("0x313137"),
+                118: sp.bytes("0x313138"),
+                119: sp.bytes("0x313139"),
+                120: sp.bytes("0x313230"),
+                121: sp.bytes("0x313231"),
+                122: sp.bytes("0x313232"),
+                123: sp.bytes("0x313233"),
+                124: sp.bytes("0x313234"),
+                125: sp.bytes("0x313235"),
+                126: sp.bytes("0x313236"),
+                127: sp.bytes("0x313237"),
+                128: sp.bytes("0x313238"),
+                129: sp.bytes("0x313239"),
+                130: sp.bytes("0x313330"),
+                131: sp.bytes("0x313331"),
+                132: sp.bytes("0x313332"),
+                133: sp.bytes("0x313333"),
+                134: sp.bytes("0x313334"),
+                135: sp.bytes("0x313335"),
+                136: sp.bytes("0x313336"),
+                137: sp.bytes("0x313337"),
+                138: sp.bytes("0x313338"),
+                139: sp.bytes("0x313339"),
+                140: sp.bytes("0x313430"),
+                141: sp.bytes("0x313431"),
+                142: sp.bytes("0x313432"),
+                143: sp.bytes("0x313433"),
+                144: sp.bytes("0x313434"),
+                145: sp.bytes("0x313435"),
+                146: sp.bytes("0x313436"),
+                147: sp.bytes("0x313437"),
+                148: sp.bytes("0x313438"),
+                149: sp.bytes("0x313439"),
+                150: sp.bytes("0x313530"),
+                151: sp.bytes("0x313531"),
+                152: sp.bytes("0x313532"),
+                153: sp.bytes("0x313533"),
+                154: sp.bytes("0x313534"),
+                155: sp.bytes("0x313535"),
+                156: sp.bytes("0x313536"),
+                157: sp.bytes("0x313537"),
+                158: sp.bytes("0x313538"),
+                159: sp.bytes("0x313539"),
+                160: sp.bytes("0x313630"),
+                161: sp.bytes("0x313631"),
+                162: sp.bytes("0x313632"),
+                163: sp.bytes("0x313633"),
+                164: sp.bytes("0x313634"),
+                165: sp.bytes("0x313635"),
+                166: sp.bytes("0x313636"),
+                167: sp.bytes("0x313637"),
+                168: sp.bytes("0x313638"),
+                169: sp.bytes("0x313639"),
+                170: sp.bytes("0x313730"),
+                171: sp.bytes("0x313731"),
+                172: sp.bytes("0x313732"),
+                173: sp.bytes("0x313733"),
+                174: sp.bytes("0x313734"),
+                175: sp.bytes("0x313735"),
+                176: sp.bytes("0x313736"),
+                177: sp.bytes("0x313737"),
+                178: sp.bytes("0x313738"),
+                179: sp.bytes("0x313739"),
+                180: sp.bytes("0x313830"),
+                181: sp.bytes("0x313831"),
+                182: sp.bytes("0x313832"),
+                183: sp.bytes("0x313833"),
+                184: sp.bytes("0x313834"),
+                185: sp.bytes("0x313835"),
+                186: sp.bytes("0x313836"),
+                187: sp.bytes("0x313837"),
+                188: sp.bytes("0x313838"),
+                189: sp.bytes("0x313839"),
+                190: sp.bytes("0x313930"),
+                191: sp.bytes("0x313931"),
+                192: sp.bytes("0x313932"),
+                193: sp.bytes("0x313933"),
+                194: sp.bytes("0x313934"),
+                195: sp.bytes("0x313935"),
+                196: sp.bytes("0x313936"),
+                197: sp.bytes("0x313937"),
+                198: sp.bytes("0x313938"),
+                199: sp.bytes("0x313939"),
+                200: sp.bytes("0x323030"),
+                201: sp.bytes("0x323031"),
+                202: sp.bytes("0x323032"),
+                203: sp.bytes("0x323033"),
+                204: sp.bytes("0x323034"),
+                205: sp.bytes("0x323035"),
+                206: sp.bytes("0x323036"),
+                207: sp.bytes("0x323037"),
+                208: sp.bytes("0x323038"),
+                209: sp.bytes("0x323039"),
+                210: sp.bytes("0x323130"),
+                211: sp.bytes("0x323131"),
+                212: sp.bytes("0x323132"),
+                213: sp.bytes("0x323133"),
+                214: sp.bytes("0x323134"),
+                215: sp.bytes("0x323135"),
+                216: sp.bytes("0x323136"),
+                217: sp.bytes("0x323137"),
+                218: sp.bytes("0x323138"),
+                219: sp.bytes("0x323139"),
+                220: sp.bytes("0x323230"),
+                221: sp.bytes("0x323231"),
+                222: sp.bytes("0x323232"),
+                223: sp.bytes("0x323233"),
+                224: sp.bytes("0x323234"),
+                225: sp.bytes("0x323235"),
+                226: sp.bytes("0x323236"),
+                227: sp.bytes("0x323237"),
+                228: sp.bytes("0x323238"),
+                229: sp.bytes("0x323239"),
+                230: sp.bytes("0x323330"),
+                231: sp.bytes("0x323331"),
+                232: sp.bytes("0x323332"),
+                233: sp.bytes("0x323333"),
+                234: sp.bytes("0x323334"),
+                235: sp.bytes("0x323335"),
+                236: sp.bytes("0x323336"),
+                237: sp.bytes("0x323337"),
+                238: sp.bytes("0x323338"),
+                239: sp.bytes("0x323339"),
+                240: sp.bytes("0x323430"),
+                241: sp.bytes("0x323431"),
+                242: sp.bytes("0x323432"),
+                243: sp.bytes("0x323433"),
+                244: sp.bytes("0x323434"),
+                245: sp.bytes("0x323435"),
+                246: sp.bytes("0x323436"),
+                247: sp.bytes("0x323437"),
+                248: sp.bytes("0x323438"),
+                249: sp.bytes("0x323439"),
+                250: sp.bytes("0x323530"),
+                251: sp.bytes("0x323531"),
+                252: sp.bytes("0x323532"),
+                253: sp.bytes("0x323533"),
+                254: sp.bytes("0x323534"),
+                255: sp.bytes("0x323535")
+            }
+
+        )
 
         # Build the TZIP-016 contract metadata
         # This is helpful to get the off-chain views code in json format
@@ -153,18 +416,20 @@ class FA2(sp.Contract):
     @ sp.entry_point
     def mint_collection(self, params):
         """Mints several new tokens at once.
-
         """
         # Define the input parameter data type
         sp.set_type(params, sp.TRecord(
-            amount=sp.TNat,
-            metadata=sp.TMap(sp.TString, sp.TBytes),
-            data=sp.TMap(sp.TString, sp.TBytes),
+            total=sp.TNat,
+            base=sp.TBytes,
             royalties=FA2.TOKEN_ROYALTIES_VALUE_TYPE).layout(
-                ("amount", ("metadata", ("data", "royalties")))))
+                ("total", ("base", "royalties"))))
 
         # Check that the administrator executed the entry point
         self.check_is_administrator()
+
+        # Check that the total of tokens minted do not exceed 256
+        # as we only have a name map for 0...255
+        sp.verify(params.total <= 256, message="FA2_TOTAL_TOO_HIGH")
 
         # Check that the total royalties do not exceed 100%
         sp.verify(params.royalties.minter.royalties +
@@ -174,30 +439,30 @@ class FA2(sp.Contract):
         # the base url is stored once in the collection map for all the tokens in this collection
         collection_id = sp.compute(self.data.collection_counter)
 
-        self.data.collection_base_url[collection_id] = params.data["base"]
+        self.data.collection_base_url[collection_id] = params.base
 
         self.data.collection_royalties[collection_id] = params.royalties
 
-        # Loop over the list of metadata
-        with sp.for_("metadataBytes", params.metadata.values()) as metadataBytes:
+        current_token = sp.local("current_token", 0)
+
+        # Loop over the total tokens
+        # We trust the caller to have uploaded metadata files from /0 to /total
+        with sp.while_(current_token.value < params.total):
             # Update the big maps
             token_id = sp.compute(self.data.counter)
             self.data.ledger[
-                (params.royalties.minter.address, token_id)] = params.amount
-            self.data.supply[token_id] = params.amount
-            self.data.token_name[token_id] = metadataBytes
+                (params.royalties.minter.address, token_id)] = 1
+            self.data.supply[token_id] = 1
+            self.data.token_name[token_id] = current_token.value
 
             # Store this token collection id to be able to get the base url later
             self.data.token_collection[token_id] = collection_id
 
-            # We don't want to store any data at this point
-            # self.data.token_data[token_id] = sp.record(
-            #     token_id=token_id,
-            #     token_info={}
-            # )
-
             # Increase the tokens counter
             self.data.counter += 1
+
+            # control the loop
+            current_token.value += 1
 
         # Increase the collection counter
         self.data.collection_counter += 1
@@ -439,9 +704,11 @@ class FA2(sp.Contract):
         # Get the collection id from the collection map
         collection_id = self.data.token_collection[token_id]
 
-        name = self.data.token_name[token_id]
-
         base = self.data.collection_base_url[collection_id]
+
+        name_nat = self.data.token_name[token_id]
+
+        name = self.data.token_name_map[name_nat]
 
         token_metadata_record = sp.record(
             token_id=token_id,
@@ -479,4 +746,4 @@ class FA2(sp.Contract):
 
 sp.add_compilation_target("fa2", FA2(
     administrator=sp.address("tz1ahsDNFzukj51hVpW626qH7Ug9HeUVQDNG"),
-    metadata=sp.utils.metadata_of_url("ipfs://bafkreibesxwqay2qqk6ikecx4z6idi5m77pwm6sg4wecxdzthxbg726id4")))
+    metadata=sp.utils.metadata_of_url("ipfs://bafkreibtus3vlzarviwdi3tzcci2gavdikksnof3cl5iizmaaigotdjuea")))

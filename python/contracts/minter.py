@@ -54,17 +54,13 @@ class Minter(sp.Contract):
         """
         # Define the input parameter data type
         sp.set_type(params, sp.TRecord(
-            editions=sp.TNat,
-            metadata=sp.TMap(sp.TString, sp.TBytes),
-            data=sp.TMap(sp.TString, sp.TBytes),
+            total=sp.TNat,
+            base=sp.TBytes,
             royalties=sp.TNat).layout(
-                ("editions", ("metadata", ("data", "royalties")))))
+            ("total", ("base", "royalties"))))
 
         # Check that the contract is not paused
         sp.verify(~self.data.paused, message="MINT_PAUSED")
-
-        # Check that the number of editions is not zero
-        sp.verify(params.editions != 0, message="MINT_ZERO_EDITIONS")
 
         # Check that the creator royalties are less than 25%
         sp.verify(params.royalties <= 250, message="MINT_INVALID_ROYALTIES")
@@ -72,23 +68,21 @@ class Minter(sp.Contract):
         # Get a handle on the FA2 contract mint entry point
         fa2_mint_handle = sp.contract(
             t=sp.TRecord(
-                amount=sp.TNat,
-                metadata=sp.TMap(sp.TString, sp.TBytes),
-                data=sp.TMap(sp.TString, sp.TBytes),
+                total=sp.TNat,
+                base=sp.TBytes,
                 royalties=sp.TRecord(
                     minter=Minter.USER_ROYALTIES_TYPE,
                     creator=Minter.USER_ROYALTIES_TYPE).layout(
                         ("minter", "creator"))).layout(
-                            ("amount", ("metadata", ("data", "royalties")))),
+                            ("total", ("base", "royalties"))),
             address=self.data.fa2,
             entry_point="mint_collection").open_some()
 
         # Mint the token
         sp.transfer(
             arg=sp.record(
-                amount=params.editions,
-                metadata=params.metadata,
-                data=params.data,
+                total=params.total,
+                base=params.base,
                 royalties=sp.record(
                     minter=sp.record(address=sp.sender, royalties=0),
                     creator=sp.record(address=sp.sender, royalties=params.royalties))),
@@ -199,4 +193,4 @@ class Minter(sp.Contract):
 sp.add_compilation_target("minter", Minter(
     administrator=sp.address("tz1ahsDNFzukj51hVpW626qH7Ug9HeUVQDNG"),
     metadata=sp.utils.metadata_of_url("ipfs://aaa"),
-    fa2=sp.address("KT1VybRPQMBDX5CqBgsSgXdqjGxZneTnFN82")))
+    fa2=sp.address("KT1C4x8RwywdexnA1qv5wmQ2jfYpAVZe2sfz")))

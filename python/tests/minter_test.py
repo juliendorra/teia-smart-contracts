@@ -60,19 +60,15 @@ def test_mint_multiple():
     minter = testEnvironment["minter"]
 
     # Check that a normal user can mint
-    editions = 1
-    data = {
-        "base": sp.utils.bytes_of_string("ipfs://bafybeif7wihgyn4l5mny3m2zzga7rz7ous7szv3w4w54eijowmmcwogezi/"),
-    }
-    metadata = {
-        "1": sp.utils.bytes_of_string("name1"),
-        "2": sp.utils.bytes_of_string("name2"),
-    }
+    editions = 1  # editions are fixed in contract to 1!
+    total = 2
+    base = sp.utils.bytes_of_string(
+        "ipfs://bafybeif7wihgyn4l5mny3m2zzga7rz7ous7szv3w4w54eijowmmcwogezi/")
     royalties = 100
+
     minter.mint(
-        editions=editions,
-        metadata=metadata,
-        data=data,
+        total=total,
+        base=base,
         royalties=royalties).run(sender=user1)
 
     # Check that the FA2 contract information has been updated
@@ -80,18 +76,15 @@ def test_mint_multiple():
     scenario.verify(fa2.data.ledger[(user1.address, 1)] == editions)
     scenario.verify(fa2.data.supply[0] == editions)
     scenario.verify(fa2.data.supply[1] == editions)
-    scenario.verify(fa2.data.token_metadata[0].token_id == 0)
-    scenario.verify(fa2.data.token_metadata[1].token_id == 1)
+
+    scenario.verify(fa2.token_metadata(0).token_id == 0)
+    scenario.verify(fa2.token_metadata(1).token_id == 1)
 
     # Check that the metadata URL returned is a combination of base and name
     scenario.verify(fa2.token_metadata(
-        0).token_info[""] == data["base"]+metadata["1"])
+        0).token_info[""] == base+sp.utils.bytes_of_string("0"))
     scenario.verify(fa2.token_metadata(
-        1).token_info[""] == data["base"]+metadata["2"])
-
-    # Check that the base URL is *not* stored in data, as we want to store it only once in collection
-    scenario.verify(~(fa2.data.token_data.contains(0)))
-    scenario.verify(~(fa2.data.token_data.contains(1)))
+        1).token_info[""] == base+sp.utils.bytes_of_string("1"))
 
     scenario.verify(fa2.token_royalties(0).minter.address == user1.address)
     scenario.verify(fa2.token_royalties(0).minter.royalties == 0)
@@ -102,18 +95,10 @@ def test_mint_multiple():
     scenario.verify(fa2.token_royalties(1).creator.address == user1.address)
     scenario.verify(fa2.token_royalties(1).creator.royalties == royalties)
 
-    # Check that trying to mint a token with zero editions fails
-    minter.mint(
-        editions=0,
-        metadata=metadata,
-        data=data,
-        royalties=royalties).run(valid=False, sender=user1)
-
     # Check that trying to set very hight royalties fails
     minter.mint(
-        editions=editions,
-        metadata=metadata,
-        data=data,
+        total=total,
+        base=base,
         royalties=300).run(valid=False, sender=user1)
 
 
@@ -192,26 +177,21 @@ def test_transfer_and_accept_fa2_administrator():
     scenario.verify(fa2.data.administrator == new_minter.address)
 
     # Check that minting with the old minter fails
-    editions = 5
-    data = {
-        "base": sp.utils.bytes_of_string("ipfs://bafybeif7wihgyn4l5mny3m2zzga7rz7ous7szv3w4w54eijowmmcwogezi/"),
-    }
-    metadata = {
-        "1": sp.utils.bytes_of_string("name1"),
-        "2": sp.utils.bytes_of_string("name2"),
-    }
+    editions = 1  # editions are fixed in contract to 1!
+    total = 1
+    base = sp.utils.bytes_of_string(
+        "ipfs://bafybeif7wihgyn4l5mny3m2zzga7rz7ous7szv3w4w54eijowmmcwogezi/")
     royalties = 100
+
     minter.mint(
-        editions=editions,
-        metadata=metadata,
-        data=data,
+        total=total,
+        base=base,
         royalties=royalties).run(valid=False, sender=user1)
 
     # Check that it's possible to mint with the new minter
     new_minter.mint(
-        editions=editions,
-        metadata=metadata,
-        data=data,
+        total=total,
+        base=base,
         royalties=royalties).run(sender=user1)
 
 
@@ -233,19 +213,15 @@ def test_set_pause():
     scenario.verify(minter.is_paused())
 
     # Check that minting fails
-    editions = 5
-    data = {
-        "base": sp.utils.bytes_of_string("ipfs://bafybeif7wihgyn4l5mny3m2zzga7rz7ous7szv3w4w54eijowmmcwogezi/"),
-    }
-    metadata = {
-        "1": sp.utils.bytes_of_string("name1"),
-        "2": sp.utils.bytes_of_string("name2"),
-    }
+    editions = 1
+    total = 2
+    base = sp.utils.bytes_of_string(
+        "ipfs://bafybeif7wihgyn4l5mny3m2zzga7rz7ous7szv3w4w54eijowmmcwogezi/")
     royalties = 100
+
     minter.mint(
-        editions=editions,
-        metadata=metadata,
-        data=data,
+        total=total,
+        base=base,
         royalties=royalties).run(valid=False, sender=user1)
 
     # Unpause the contract
@@ -258,7 +234,6 @@ def test_set_pause():
 
     # Check that minting is possible again
     minter.mint(
-        editions=editions,
-        metadata=metadata,
-        data=data,
+        total=total,
+        base=base,
         royalties=royalties).run(sender=user1)
