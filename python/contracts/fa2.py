@@ -477,12 +477,18 @@ class FA2(sp.Contract):
                 token_id = sp.compute(tx.token_id)
                 self.check_token_exists(token_id)
 
-                # Check that the sender is one of the token operators
-                owner = sp.compute(transfer.from_)
+                declared_owner = sp.compute(transfer.from_)
+
+                # check that the declared owner actually owns the token
                 sp.verify(
-                    (sp.sender == owner) |
+                    self.data.ledger[token_id] == declared_owner,
+                    message="FA2_NOT_OWNING_TOKEN")
+
+                # Check that the sender is one of the token operators
+                sp.verify(
+                    (sp.sender == declared_owner) |
                     self.data.operators.contains(sp.record(
-                        owner=owner,
+                        owner=declared_owner,
                         operator=sp.sender,
                         token_id=token_id)),
                     message="FA2_NOT_OPERATOR")
