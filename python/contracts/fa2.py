@@ -71,8 +71,6 @@ class FA2(sp.Contract):
             # The big map with the first token_id of each collection
             collection_start_id=sp.TBigMap(sp.TNat, sp.TNat),
 
-            # The big map with the tokens data (source code, description, etc)
-            token_data=sp.TBigMap(sp.TNat, sp.TMap(sp.TString, sp.TBytes)),
             # The big map with the collection royalties for the minter and creators
             collection_royalties=sp.TBigMap(
                 sp.TNat, FA2.TOKEN_ROYALTIES_VALUE_TYPE),
@@ -98,7 +96,6 @@ class FA2(sp.Contract):
             collection_base_url=sp.big_map(),
             collection_start_id=sp.big_map(),
             collection_royalties=sp.big_map(),
-            token_data=sp.big_map(),
             operators=sp.big_map(),
             proposed_administrator=sp.none,
             counter=0,
@@ -384,7 +381,6 @@ class FA2(sp.Contract):
                 self.all_tokens,
                 self.is_operator,
                 self.token_metadata,
-                self.token_data,
                 self.token_royalties],
             "permissions": {
                 "operator": "owner-or-operator-transfer",
@@ -716,17 +712,6 @@ class FA2(sp.Contract):
 
         # Return the token metadata
         sp.result(token_metadata_record)
-
-    @ sp.onchain_view(pure=True)
-    def token_data(self, token_id):
-        """Returns the token on-chain data.
-
-        """
-        # Define the input parameter data type
-        sp.set_type(token_id, sp.TNat)
-
-        # Return the token on-chain data
-        sp.result(self.data.token_data[token_id])
 
     @ sp.onchain_view(pure=True)
     def token_royalties(self, token_id):
