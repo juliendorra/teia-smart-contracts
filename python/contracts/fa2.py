@@ -65,8 +65,6 @@ class FA2(sp.Contract):
             ledger=sp.TBigMap(FA2.LEDGER_KEY_TYPE, sp.TNat),
             # The tokens total supply
             supply=sp.TBigMap(sp.TNat, sp.TNat),
-            # The big map with the tokens metadata
-            token_name=sp.TBigMap(sp.TNat, sp.TNat),
 
             # Collection management: storing the base url only once for a whole collection
             # The big map with the tokens collection IDs
@@ -75,6 +73,10 @@ class FA2(sp.Contract):
             # The big map with the collection base url
             collection_base_url=sp.TBigMap(
                 sp.TNat, sp.TBytes),
+            # Counter that tracks the total number of collections
+            collection_counter=sp.TNat,
+            # The big map with the first token_id of each collection
+            collection_start_id=sp.TBigMap(sp.TNat, sp.TNat),
 
             # The big map with the tokens data (source code, description, etc)
             token_data=sp.TBigMap(sp.TNat, sp.TMap(sp.TString, sp.TBytes)),
@@ -87,9 +89,10 @@ class FA2(sp.Contract):
             proposed_administrator=sp.TOption(sp.TAddress),
             # A counter that tracks the total number of tokens minted so far
             counter=sp.TNat,
-            # A counter that tracks the total number of collections
-            collection_counter=sp.TNat,
-            token_name_map=sp.TMap(sp.TNat, sp.TBytes)
+
+            # A static map to convert from nat to their bytes representation
+            token_name_map=sp.TMap(sp.TNat, sp.TBytes),
+
         ))
 
         # Initialize the contract storage
@@ -98,11 +101,11 @@ class FA2(sp.Contract):
             metadata=metadata,
             ledger=sp.big_map(),
             supply=sp.big_map(),
-            token_name=sp.big_map(),
             token_collection=sp.big_map(),
             collection_base_url=sp.big_map(),
-            token_data=sp.big_map(),
+            collection_start_id=sp.big_map(),
             collection_royalties=sp.big_map(),
+            token_data=sp.big_map(),
             operators=sp.big_map(),
             proposed_administrator=sp.none,
             counter=0,
@@ -441,6 +444,8 @@ class FA2(sp.Contract):
 
         self.data.collection_base_url[collection_id] = params.base
 
+        self.data.collection_start_id[collection_id] = self.data.counter
+
         self.data.collection_royalties[collection_id] = params.royalties
 
         current_token = sp.local("current_token", 0)
@@ -453,7 +458,6 @@ class FA2(sp.Contract):
             self.data.ledger[
                 (params.royalties.minter.address, token_id)] = 1
             self.data.supply[token_id] = 1
-            self.data.token_name[token_id] = current_token.value
 
             # Store this token collection id to be able to get the base url later
             self.data.token_collection[token_id] = collection_id
@@ -706,9 +710,11 @@ class FA2(sp.Contract):
 
         base = self.data.collection_base_url[collection_id]
 
-        name_nat = self.data.token_name[token_id]
+        collection_start_id = self.data.collection_start_id[collection_id]
 
-        name = self.data.token_name_map[name_nat]
+        # examples: 78 - 0 (first collection) = 78 ; 256 - 256 = 0 ; 266 - 256 = 10
+        name = self.data.token_name_map[sp.as_nat(
+            token_id - collection_start_id)]
 
         token_metadata_record = sp.record(
             token_id=token_id,
@@ -746,4 +752,4 @@ class FA2(sp.Contract):
 
 sp.add_compilation_target("fa2", FA2(
     administrator=sp.address("tz1ahsDNFzukj51hVpW626qH7Ug9HeUVQDNG"),
-    metadata=sp.utils.metadata_of_url("ipfs://bafkreibtus3vlzarviwdi3tzcci2gavdikksnof3cl5iizmaaigotdjuea")))
+    metadata=sp.utils.metadata_of_url("ipfs://bafkreicg7rl3ag6hacra6kngv3n5tdczqou3mb2sd4mr7z5pntlliaofny")))
