@@ -15,12 +15,6 @@ class FA2(sp.Contract):
 
     """
 
-    LEDGER_KEY_TYPE = sp.TPair(
-        # The owner of the token editions
-        sp.TAddress,
-        # The token id
-        sp.TNat)
-
     USER_ROYALTIES_TYPE = sp.TRecord(
         # The user address
         address=sp.TAddress,
@@ -55,7 +49,7 @@ class FA2(sp.Contract):
             # The contract metadata
             metadata=sp.TBigMap(sp.TString, sp.TBytes),
             # The ledger big map where the tokens owners are listed
-            ledger=sp.TBigMap(FA2.LEDGER_KEY_TYPE, sp.TNat),
+            ledger=sp.TBigMap(sp.TNat, sp.TAddress),
             # The tokens total supply
             supply=sp.TBigMap(sp.TNat, sp.TNat),
 
@@ -444,8 +438,7 @@ class FA2(sp.Contract):
         with sp.while_(current_token.value < params.total):
             # Update the big maps
             token_id = sp.compute(self.data.counter)
-            self.data.ledger[
-                (params.royalties.minter.address, token_id)] = 1
+            self.data.ledger[token_id] = params.royalties.minter.address
             self.data.supply[token_id] = 1
 
             # Store this token collection id to be able to get the base url later
@@ -478,6 +471,8 @@ class FA2(sp.Contract):
         # Loop over the list of transfers
         with sp.for_("transfer", params) as transfer:
             with sp.for_("tx", transfer.txs) as tx:
+                sp.verify(tx.amount == 1, message="FA2_1_EDITION_ONLY")
+
                 # Check that the token exists
                 token_id = sp.compute(tx.token_id)
                 self.check_token_exists(token_id)
@@ -492,18 +487,8 @@ class FA2(sp.Contract):
                         token_id=token_id)),
                     message="FA2_NOT_OPERATOR")
 
-                # Check that the transfer amount is not zero
-                with sp.if_(tx.amount > 0):
-                    # Remove the token amount from the owner
-                    owner_key = sp.pair(owner, token_id)
-                    self.data.ledger[owner_key] = sp.as_nat(
-                        self.data.ledger.get(owner_key, 0) - tx.amount,
-                        "FA2_INSUFFICIENT_BALANCE")
-
-                    # Add the token amount to the new owner
-                    new_owner_key = sp.pair(tx.to_, token_id)
-                    self.data.ledger[new_owner_key] = self.data.ledger.get(
-                        new_owner_key, 0) + tx.amount
+                # Add the new owner to the token ledger
+                self.data.ledger[token_id] = tx.to_
 
     @ sp.entry_point
     def balance_of(self, params):
@@ -526,10 +511,14 @@ class FA2(sp.Contract):
             self.check_token_exists(request.token_id)
 
             # Return the owner token balance
-            sp.result(sp.record(
-                request=request,
-                balance=self.data.ledger.get(
-                    (request.owner, request.token_id), 0)))
+            with sp.if_(self.data.ledger[request.token_id] == request.owner):
+                sp.result(sp.record(
+                    request=request,
+                    balance=1))
+            with sp.else_():
+                sp.result(sp.record(
+                    request=request,
+                    balance=0))
 
         sp.transfer(
             params.requests.map(process_request), sp.mutez(0), params.callback)
@@ -646,7 +635,10 @@ class FA2(sp.Contract):
         self.check_token_exists(params.token_id)
 
         # Return the owner token balance
-        sp.result(self.data.ledger.get((params.owner, params.token_id), 0))
+        with sp.if_(self.data.ledger[params.token_id] == params.owner):
+            sp.result(1)
+        with sp.else_():
+            sp.result(0)
 
     @ sp.onchain_view(pure=True)
     def total_supply(self, token_id):
