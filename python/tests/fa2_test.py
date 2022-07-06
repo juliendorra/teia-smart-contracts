@@ -183,7 +183,7 @@ def test_transfer():
 
     # Check that the contract information has been updated
     scenario.verify(fa2.get_balance(
-        sp.record(owner=user1.address, token_id=0)) == editions - editions)
+        sp.record(owner=user1.address, token_id=0)) == 0)
     scenario.verify(fa2.get_balance(
         sp.record(owner=user3.address, token_id=0)) == editions)
     scenario.verify(fa2.total_supply(0) == editions)
@@ -241,123 +241,175 @@ def test_transfer():
     scenario.verify(fa2.total_supply(0) == editions)
 
 
-# @sp.add_test(name="Test complex transfer")
-# def test_complex_transfer():
-#     # Get the test environment
-#     testEnvironment = get_test_environment()
-#     scenario = testEnvironment["scenario"]
-#     admin = testEnvironment["admin"]
-#     user1 = testEnvironment["user1"]
-#     user2 = testEnvironment["user2"]
-#     user3 = testEnvironment["user3"]
-#     fa2 = testEnvironment["fa2"]
+@sp.add_test(name="Test complex transfer")
+def test_complex_transfer():
+    # Get the test environment
+    testEnvironment = get_test_environment()
+    scenario = testEnvironment["scenario"]
+    admin = testEnvironment["admin"]
+    user1 = testEnvironment["user1"]
+    user2 = testEnvironment["user2"]
+    user3 = testEnvironment["user3"]
+    fa2 = testEnvironment["fa2"]
 
-#     # Mint two tokens
-#     editions = 1  # editions are fixed in contract to 1
-#     total = 1
-#     base = sp.utils.bytes_of_string(
-#         "ipfs://bafybeif7wihgyn4l5mny3m2zzga7rz7ous7szv3w4w54eijowmmcwogezi/")
-#     royalties = sp.record(
-#         minter=sp.record(address=user1.address, royalties=0),
-#         creator=sp.record(address=user1.address, royalties=100))
-#     fa2.mint_collection(
-#         total=total,
-#         base=base,
-#         royalties=royalties).run(sender=admin)
+    # Mint two tokens
+    total = 1
+    base = sp.utils.bytes_of_string(
+        "ipfs://bafybeif7wihgyn4l5mny3m2zzga7rz7ous7szv3w4w54eijowmmcwogezi/")
 
-#     royalties = sp.record(
-#         minter=sp.record(address=user2.address, royalties=0),
-#         creator=sp.record(address=user2.address, royalties=100))
-#     fa2.mint_collection(
-#         total=total,
-#         base=base,
-#         royalties=royalties).run(sender=admin)
+    royalties = sp.record(
+        minter=sp.record(address=user1.address, royalties=0),
+        creator=sp.record(address=user1.address, royalties=100))
 
-#     # Check that the contract information has been updated
-#     scenario.verify(fa2.get_balance(
-#         sp.record(owner=user1.address, token_id=0)) == 1)
-#     scenario.verify(fa2.get_balance(
-#         sp.record(owner=user2.address, token_id=1)) == 1)
-#     scenario.verify(fa2.total_supply(0) == 1)
-#     scenario.verify(fa2.total_supply(1) == 1)
+    fa2.mint_collection(
+        total=total,
+        base=base,
+        royalties=royalties).run(sender=admin)
 
-#     # Check that users can only transfer tokens they own
-#     fa2.transfer([
-#         sp.record(
-#             from_=user1.address,
-#             txs=[sp.record(to_=user3.address, token_id=0, amount=1)]),
-#         sp.record(
-#             from_=user2.address,
-#             txs=[sp.record(to_=user3.address, token_id=1, amount=1)])
-#     ]).run(valid=False, sender=user1)
+    royalties = sp.record(
+        minter=sp.record(address=user2.address, royalties=0),
+        creator=sp.record(address=user2.address, royalties=100))
 
-#     # Check that the contract information has been updated
-#     scenario.verify(fa2.get_balance(
-#         sp.record(owner=user1.address, token_id=0)) == 0)
-#     scenario.verify(fa2.get_balance(
-#         sp.record(owner=user2.address, token_id=0)) == 0)
-#     scenario.verify(fa2.get_balance(
-#         sp.record(owner=user3.address, token_id=0)) == 1)
-#     scenario.verify(fa2.get_balance(
-#         sp.record(owner=user2.address, token_id=1)) == 1)
+    fa2.mint_collection(
+        total=total,
+        base=base,
+        royalties=royalties).run(sender=admin)
 
-#     # Check that the admin cannot transfer whatever token they want
-#     fa2.transfer([
-#         sp.record(
-#             from_=user1.address,
-#             txs=[sp.record(to_=user3.address, token_id=0, amount=1)]),
-#         sp.record(
-#             from_=user2.address,
-#             txs=[sp.record(to_=user3.address, token_id=1, amount=1)])
-#     ]).run(valid=False, sender=admin)
+    # Check that the contract information has been updated
+    scenario.verify(fa2.get_balance(
+        sp.record(owner=user1.address, token_id=0)) == 1)
+    scenario.verify(fa2.get_balance(
+        sp.record(owner=user2.address, token_id=1)) == 1)
 
-#     # Check that owners can transfer tokens to themselves
-#     fa2.transfer([
-#         sp.record(
-#             from_=user2.address,
-#             txs=[
-#                 sp.record(to_=user2.address, token_id=0, amount=1),
-#                 sp.record(to_=user2.address, token_id=0, amount=0),
-#                 sp.record(to_=user2.address, token_id=1, amount=2)])
-#     ]).run(sender=user2)
+    scenario.verify(fa2.total_supply(0) == 1)
+    scenario.verify(fa2.total_supply(1) == 1)
 
-#     # Check that the contract information has been updated
-#     scenario.verify(fa2.get_balance(
-#         sp.record(owner=user1.address, token_id=0)) == 10 - 2 - 3)
-#     scenario.verify(fa2.get_balance(
-#         sp.record(owner=user2.address, token_id=0)) == 2)
-#     scenario.verify(fa2.get_balance(
-#         sp.record(owner=user3.address, token_id=0)) == 3)
-#     scenario.verify(fa2.get_balance(
-#         sp.record(owner=user2.address, token_id=1)) == 20)
+    # Check that users can only transfer tokens they own
+    fa2.transfer([
+        sp.record(
+            from_=user1.address,
+            txs=[sp.record(to_=user3.address, token_id=0, amount=1)]),
+        sp.record(
+            from_=user2.address,
+            txs=[sp.record(to_=user3.address, token_id=1, amount=1)])
+    ]).run(valid=False, sender=user3)
 
-#     # Make the second user as operator of the first user token
-#     fa2.update_operators([sp.variant("add_operator", sp.record(
-#         owner=user1.address,
-#         operator=user2.address,
-#         token_id=0))]).run(sender=user1)
+    # Check that the contract information hasn't changed
+    scenario.verify(fa2.get_balance(
+        sp.record(owner=user1.address, token_id=0)) == 1)
+    scenario.verify(fa2.get_balance(
+        sp.record(owner=user2.address, token_id=0)) == 0)
+    scenario.verify(fa2.get_balance(
+        sp.record(owner=user3.address, token_id=0)) == 0)
+    scenario.verify(fa2.get_balance(
+        sp.record(owner=user1.address, token_id=1)) == 0)
+    scenario.verify(fa2.get_balance(
+        sp.record(owner=user2.address, token_id=1)) == 1)
+    scenario.verify(fa2.get_balance(
+        sp.record(owner=user3.address, token_id=1)) == 0)
 
-#     # Check that the second user can transfer their tokens and the first user token
-#     fa2.transfer([
-#         sp.record(
-#             from_=user2.address,
-#             txs=[sp.record(to_=user3.address, token_id=1, amount=1)]),
-#         sp.record(
-#             from_=user1.address,
-#             txs=[sp.record(to_=user3.address, token_id=0, amount=2)])
-#     ]).run(sender=user2)
+    # Check that the admin cannot transfer whatever token they want
+    fa2.transfer([
+        sp.record(
+            from_=user3.address,
+            txs=[sp.record(to_=user1.address, token_id=0, amount=1)]),
+        sp.record(
+            from_=user2.address,
+            txs=[sp.record(to_=user3.address, token_id=1, amount=1)])
+    ]).run(valid=False, sender=admin)
 
-#     # Check that the contract information has been updated
-#     scenario.verify(fa2.get_balance(
-#         sp.record(owner=user1.address, token_id=0)) == 10 - 2 - 3 - 2)
-#     scenario.verify(fa2.get_balance(
-#         sp.record(owner=user2.address, token_id=0)) == 2)
-#     scenario.verify(fa2.get_balance(
-#         sp.record(owner=user3.address, token_id=0)) == 3 + 2)
-#     scenario.verify(fa2.get_balance(
-#         sp.record(owner=user2.address, token_id=1)) == 20 - 1)
-#     scenario.verify(fa2.get_balance(
-#         sp.record(owner=user3.address, token_id=1)) == 1)
+    # Check that transfer over 1 fails
+    fa2.transfer([
+        sp.record(
+            from_=user1.address,
+            txs=[sp.record(to_=user1.address, token_id=0, amount=2)])
+    ]).run(valid=False, sender=user1)
+
+    # Check that the contract information hasn't changed
+    scenario.verify(fa2.get_balance(
+        sp.record(owner=user1.address, token_id=0)) == 1)
+    scenario.verify(fa2.get_balance(
+        sp.record(owner=user2.address, token_id=0)) == 0)
+    scenario.verify(fa2.get_balance(
+        sp.record(owner=user3.address, token_id=0)) == 0)
+    scenario.verify(fa2.get_balance(
+        sp.record(owner=user1.address, token_id=1)) == 0)
+    scenario.verify(fa2.get_balance(
+        sp.record(owner=user2.address, token_id=1)) == 1)
+    scenario.verify(fa2.get_balance(
+        sp.record(owner=user3.address, token_id=1)) == 0)
+
+    # Check that owners can transfer tokens to themselves
+    fa2.transfer([
+        sp.record(
+            from_=user2.address,
+            txs=[sp.record(to_=user2.address, token_id=1, amount=1)])
+    ]).run(sender=user2)
+
+    # Check that the contract information hasn't changed
+    scenario.verify(fa2.get_balance(
+        sp.record(owner=user1.address, token_id=0)) == 1)
+    scenario.verify(fa2.get_balance(
+        sp.record(owner=user2.address, token_id=0)) == 0)
+    scenario.verify(fa2.get_balance(
+        sp.record(owner=user3.address, token_id=0)) == 0)
+    scenario.verify(fa2.get_balance(
+        sp.record(owner=user1.address, token_id=1)) == 0)
+    scenario.verify(fa2.get_balance(
+        sp.record(owner=user2.address, token_id=1)) == 1)
+    scenario.verify(fa2.get_balance(
+        sp.record(owner=user3.address, token_id=1)) == 0)
+
+    # Make the user 3 as operator of user 2 token: id 1
+    fa2.update_operators([sp.variant("add_operator", sp.record(
+        owner=user2.address,
+        operator=user3.address,
+        token_id=1))]).run(sender=user2)
+
+    # Transfer user 1 token: id 0 to user 3
+    fa2.transfer([
+        sp.record(
+            from_=user1.address,
+            txs=[sp.record(to_=user3.address, token_id=0, amount=1)])
+    ]).run(sender=user1)
+
+    # Check that the contract information has been updated
+    scenario.verify(fa2.get_balance(
+        sp.record(owner=user1.address, token_id=0)) == 0)
+    scenario.verify(fa2.get_balance(
+        sp.record(owner=user2.address, token_id=0)) == 0)
+    scenario.verify(fa2.get_balance(
+        sp.record(owner=user3.address, token_id=0)) == 1)
+    scenario.verify(fa2.get_balance(
+        sp.record(owner=user1.address, token_id=1)) == 0)
+    scenario.verify(fa2.get_balance(
+        sp.record(owner=user2.address, token_id=1)) == 1)
+    scenario.verify(fa2.get_balance(
+        sp.record(owner=user3.address, token_id=1)) == 0)
+
+    # Check that user 3 can transfer their token (id 0) and the user 2 token (id 1)
+    fa2.transfer([
+        sp.record(
+            from_=user2.address,
+            txs=[sp.record(to_=user1.address, token_id=1, amount=1)]),
+        sp.record(
+            from_=user3.address,
+            txs=[sp.record(to_=user1.address, token_id=0, amount=1)])
+    ]).run(sender=user3)
+
+    # Check that the contract information has been updated
+    scenario.verify(fa2.get_balance(
+        sp.record(owner=user1.address, token_id=0)) == 1)
+    scenario.verify(fa2.get_balance(
+        sp.record(owner=user2.address, token_id=0)) == 0)
+    scenario.verify(fa2.get_balance(
+        sp.record(owner=user3.address, token_id=0)) == 0)
+    scenario.verify(fa2.get_balance(
+        sp.record(owner=user1.address, token_id=1)) == 1)
+    scenario.verify(fa2.get_balance(
+        sp.record(owner=user2.address, token_id=1)) == 0)
+    scenario.verify(fa2.get_balance(
+        sp.record(owner=user3.address, token_id=1)) == 0)
 
 
 @sp.add_test(name="Test balance of")
