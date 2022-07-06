@@ -471,7 +471,9 @@ class FA2(sp.Contract):
         # Loop over the list of transfers
         with sp.for_("transfer", params) as transfer:
             with sp.for_("tx", transfer.txs) as tx:
-                sp.verify(tx.amount == 1, message="FA2_1_EDITION_ONLY")
+
+                sp.verify(tx.amount < 2, message="FA2_INSUFFICIENT_BALANCE")
+                sp.verify(tx.amount != 0, message="FA2_TRANSACTION_ZERO")
 
                 # Check that the token exists
                 token_id = sp.compute(tx.token_id)
