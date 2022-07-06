@@ -33,10 +33,10 @@ Once originated, change the FA2 contract address in the Minter contract, compile
 tz1ahsDNFzukj51hVpW626qH7Ug9HeUVQDNG ithacanet testnet account
 Use it in fa2.py and minter.py as the administrator address
 
-FA2 contract on ithacanet: KT1C4x8RwywdexnA1qv5wmQ2jfYpAVZe2sfz
+FA2 contract on ithacanet: KT1DCbkxW9vdSPmfPkDe8gLf18Lo1eiPLAgn
 Use it in minter.py as fa2 contract
 
-Minter contract on ithacanet:  KT1HE2cmXETHkb9tYYPSH1Ue2kETCVpjrNba
+Minter contract on ithacanet:  KT1GmqpR3a2LU74GG2jnnyL1QcPPqvPB9HtR
 Call it from Taquito !!
 
 
