@@ -21,13 +21,6 @@ class FA2(sp.Contract):
         # The token id
         sp.TNat)
 
-    TOKEN_METADATA_VALUE_TYPE = sp.TRecord(
-        # The token id
-        token_id=sp.TNat,
-        # The map with the token metadata information
-        token_info=sp.TMap(sp.TString, sp.TBytes)).layout(
-            ("token_id", "token_info"))
-
     USER_ROYALTIES_TYPE = sp.TRecord(
         # The user address
         address=sp.TAddress,
