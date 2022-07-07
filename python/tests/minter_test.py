@@ -72,10 +72,13 @@ def test_mint_multiple():
         royalties=royalties).run(sender=user1)
 
     # Check that the FA2 contract information has been updated
-    scenario.verify(fa2.data.ledger[(user1.address, 0)] == editions)
-    scenario.verify(fa2.data.ledger[(user1.address, 1)] == editions)
-    scenario.verify(fa2.data.supply[0] == editions)
-    scenario.verify(fa2.data.supply[1] == editions)
+    scenario.verify(fa2.get_balance(
+        sp.record(owner=user1.address, token_id=0)) == editions)
+    scenario.verify(fa2.get_balance(
+        sp.record(owner=user1.address, token_id=1)) == editions)
+
+    scenario.verify(fa2.total_supply(0) == editions)
+    scenario.verify(fa2.total_supply(1) == editions)
 
     scenario.verify(fa2.token_metadata(0).token_id == 0)
     scenario.verify(fa2.token_metadata(1).token_id == 1)
