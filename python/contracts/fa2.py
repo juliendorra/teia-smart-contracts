@@ -1,5 +1,3 @@
-from operator import length_hint
-from typing import Collection
 import smartpy as sp
 
 
@@ -50,8 +48,8 @@ class FA2(sp.Contract):
             metadata=sp.TBigMap(sp.TString, sp.TBytes),
             # The ledger big map where the tokens owners are listed
             ledger=sp.TBigMap(sp.TNat, sp.TAddress),
-            # The tokens total supply
-            supply=sp.TBigMap(sp.TNat, sp.TNat),
+            # The big map where the tokens initial creators are listed when minted
+            collection_ledger=sp.TBigMap(sp.TNat, sp.TAddress),
 
             # Collection management: storing the base url only once for a whole collection
             # The big map with the tokens collection IDs
@@ -85,7 +83,7 @@ class FA2(sp.Contract):
             administrator=administrator,
             metadata=metadata,
             ledger=sp.big_map(),
-            supply=sp.big_map(),
+            collection_ledger=sp.big_map(),
             token_collection=sp.big_map(),
             collection_base_url=sp.big_map(),
             collection_start_id=sp.big_map(),
@@ -431,15 +429,15 @@ class FA2(sp.Contract):
 
         self.data.collection_royalties[collection_id] = params.royalties
 
+        self.data.collection_ledger[collection_id] = params.royalties.minter.address
+
         current_token = sp.local("current_token", 0)
 
         # Loop over the total tokens
         # We trust the caller to have uploaded metadata files from /0 to /total
         with sp.while_(current_token.value < params.total):
-            # Update the big maps
+
             token_id = sp.compute(self.data.counter)
-            self.data.ledger[token_id] = params.royalties.minter.address
-            self.data.supply[token_id] = 1
 
             # Store this token collection id to be able to get the base url later
             self.data.token_collection[token_id] = collection_id
@@ -481,10 +479,21 @@ class FA2(sp.Contract):
 
                 declared_owner = sp.compute(transfer.from_)
 
-                # check that the declared owner actually owns the token
-                sp.verify(
-                    self.data.ledger[token_id] == declared_owner,
-                    message="FA2_NOT_OWNING_TOKEN")
+                # if the token is in the individual tokens ledger...
+                with sp.if_(self.data.ledger.contains(token_id)):
+                    # ... check that the declared owner actually owns the token
+                    sp.verify(self.data.ledger[token_id] == declared_owner,
+                              message="FA2_INSUFFICIENT_BALANCE")
+
+                # Else the token is still owned by the original minter
+                # We check the collection ledger
+                with sp.else_():
+                    # Get the collection id from the collection map
+                    collection_id = self.data.token_collection[token_id]
+
+                    # Check that the declared owner minted the collection
+                    sp.verify(self.data.collection_ledger[collection_id] == declared_owner,
+                              message="FA2_INSUFFICIENT_BALANCE")
 
                 # Check that the sender is one of the token operators
                 sp.verify(
@@ -519,14 +528,33 @@ class FA2(sp.Contract):
             self.check_token_exists(request.token_id)
 
             # Return the owner token balance
-            with sp.if_(self.data.ledger[request.token_id] == request.owner):
-                sp.result(sp.record(
-                    request=request,
-                    balance=1))
+
+            # if the token is in the individual tokens ledger...
+            with sp.if_(self.data.ledger.contains(request.token_id)):
+                # ... check that the requested owner actually owns the token
+                with sp.if_(self.data.ledger[request.token_id] == request.owner):
+                    sp.result(sp.record(
+                        request=request,
+                        balance=1))
+                with sp.else_():
+                    sp.result(sp.record(
+                        request=request,
+                        balance=0))
+
+            # Else the token is still owned by the original minter
+            # We check the collection ledger
             with sp.else_():
-                sp.result(sp.record(
-                    request=request,
-                    balance=0))
+                # Get the collection id from the collection map
+                collection_id = self.data.token_collection[request.token_id]
+                # Check that the requested owner minted the collection
+                with sp.if_(self.data.collection_ledger[collection_id] == request.owner):
+                    sp.result(sp.record(
+                        request=request,
+                        balance=1))
+                with sp.else_():
+                    sp.result(sp.record(
+                        request=request,
+                        balance=0))
 
         sp.transfer(
             params.requests.map(process_request), sp.mutez(0), params.callback)
@@ -643,10 +671,25 @@ class FA2(sp.Contract):
         self.check_token_exists(params.token_id)
 
         # Return the owner token balance
-        with sp.if_(self.data.ledger[params.token_id] == params.owner):
-            sp.result(1)
+
+        # if the token is in the individual tokens ledger...
+        with sp.if_(self.data.ledger.contains(params.token_id)):
+            # ... check that the requested owner actually owns the token
+            with sp.if_(self.data.ledger[params.token_id] == params.owner):
+                sp.result(1)
+            with sp.else_():
+                sp.result(0)
+
+        # Else the token is still owned by the original minter
+        # We check the collection ledger
         with sp.else_():
-            sp.result(0)
+            # Get the collection id from the collection map
+            collection_id = self.data.token_collection[params.token_id]
+            # Check that the requested owner minted the collection
+            with sp.if_(self.data.collection_ledger[collection_id] == params.owner):
+                sp.result(1)
+            with sp.else_():
+                sp.result(0)
 
     @ sp.onchain_view(pure=True)
     def total_supply(self, token_id):
@@ -660,7 +703,7 @@ class FA2(sp.Contract):
         self.check_token_exists(token_id)
 
         # Return the token total supply
-        sp.result(self.data.supply.get(token_id, 0))
+        sp.result(1)
 
     @ sp.onchain_view(pure=True)
     def all_tokens(self):
@@ -730,4 +773,4 @@ class FA2(sp.Contract):
 
 sp.add_compilation_target("fa2", FA2(
     administrator=sp.address("tz1ahsDNFzukj51hVpW626qH7Ug9HeUVQDNG"),
-    metadata=sp.utils.metadata_of_url("ipfs://bafkreicg7rl3ag6hacra6kngv3n5tdczqou3mb2sd4mr7z5pntlliaofny")))
+    metadata=sp.utils.metadata_of_url("ipfs://bafkreih4ghxml7erkz5iz5xf2g7oapsqr473zabhl4s5g2opffyh3cg6m4")))
