@@ -20,13 +20,13 @@ If you made any changes to the views in FA2 contract :
 
 ~/smartpy-cli/SmartPy.sh compile python/contracts/fa2.py output/contracts/fa2 --html --purge
 
-~/smartpy-cli/SmartPy.sh originate-contract --code output/contracts/fa2/fa2/step_000_cont_0_contract.json --storage output/contracts/fa2/fa2/step_000_cont_0_storage.json --rpc https://rpc.ithacanet.teztnets.xyz
+~/smartpy-cli/SmartPy.sh originate-contract --code output/contracts/fa2/fa2/step_000_cont_0_contract.json --storage output/contracts/fa2/fa2/step_000_cont_0_storage.json --rpc https://rpc.ghostnet.teztnets.xyz
 
 Once originated, change the FA2 contract address in the Minter contract, compile, then deploy :
 
 ~/smartpy-cli/SmartPy.sh compile python/contracts/minter.py output/contracts/minter --html --purge
 
-~/smartpy-cli/SmartPy.sh originate-contract --code output/contracts/minter/minter/step_000_cont_0_contract.json --storage output/contracts/minter/minter/step_000_cont_0_storage.json --rpc https://rpc.ithacanet.teztnets.xyz
+~/smartpy-cli/SmartPy.sh originate-contract --code output/contracts/minter/minter/step_000_cont_0_contract.json --storage output/contracts/minter/minter/step_000_cont_0_storage.json --rpc https://rpc.ghostnet.teztnets.xyz
 
 ### addresses 
 
