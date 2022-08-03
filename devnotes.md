@@ -7,14 +7,18 @@ cd python
 
 If you made any changes to the views in FA2 contract : 
 
+ - update the "views": [...] array in contract_metadata = {...} object
+
  - compile the contract once
   ~/smartpy-cli/SmartPy.sh compile python/contracts/fa2.py output/contracts/fa2 --html --purge
 
  - upload step_000_cont_0_metadata.contract_metadata.json to IPFS, note ipfs link (ipfs://[CID])
   
- -  add ipfs link to FA2 compilation target metadata
+ - add ipfs link to FA2 compilation target metadata
   
- - then compile again and deploy
+ - compile again 
+  
+-  deploy
 
 ### deploy / originate contracts
 

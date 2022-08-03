@@ -373,7 +373,8 @@ class FA2(sp.Contract):
                 self.all_tokens,
                 self.is_operator,
                 self.token_metadata,
-                self.token_royalties],
+                self.token_royalties,
+                self.count_tokens],
             "permissions": {
                 "operator": "owner-or-operator-transfer",
                 "receiver": "owner-no-hook",
@@ -397,7 +398,7 @@ class FA2(sp.Contract):
         """
         sp.verify(token_id < self.data.counter, message="FA2_TOKEN_UNDEFINED")
 
-    @ sp.entry_point
+    @sp.entry_point
     def mint_collection(self, params):
         """Mints several new tokens at once.
         """
@@ -451,7 +452,7 @@ class FA2(sp.Contract):
         # Increase the collection counter
         self.data.collection_counter += 1
 
-    @ sp.entry_point
+    @sp.entry_point
     def transfer(self, params):
         """Executes a list of token transfers.
 
@@ -507,7 +508,7 @@ class FA2(sp.Contract):
                 # Add the new owner to the token ledger
                 self.data.ledger[token_id] = tx.to_
 
-    @ sp.entry_point
+    @sp.entry_point
     def balance_of(self, params):
         """Requests information about a list of token balances.
 
@@ -559,7 +560,7 @@ class FA2(sp.Contract):
         sp.transfer(
             params.requests.map(process_request), sp.mutez(0), params.callback)
 
-    @ sp.entry_point
+    @sp.entry_point
     def update_operators(self, params):
         """Updates a list of operators.
 
@@ -593,7 +594,7 @@ class FA2(sp.Contract):
                     # Remove the operator from the operators big map
                     del self.data.operators[operator_key]
 
-    @ sp.entry_point
+    @sp.entry_point
     def transfer_administrator(self, proposed_administrator):
         """Proposes to transfer the contract administrator to another address.
 
@@ -607,7 +608,7 @@ class FA2(sp.Contract):
         # Set the new proposed administrator address
         self.data.proposed_administrator = sp.some(proposed_administrator)
 
-    @ sp.entry_point
+    @sp.entry_point
     def accept_administrator(self):
         """The proposed administrator accepts the contract administrator
         responsabilities.
@@ -623,7 +624,7 @@ class FA2(sp.Contract):
         # Reset the proposed administrator value
         self.data.proposed_administrator = sp.none
 
-    @ sp.entry_point
+    @sp.entry_point
     def set_metadata(self, params):
         """Updates the contract metadata.
 
@@ -639,7 +640,7 @@ class FA2(sp.Contract):
         # Update the contract metadata
         self.data.metadata[params.k] = params.v
 
-    @ sp.onchain_view(pure=True)
+    @sp.onchain_view(pure=True)
     def token_exists(self, token_id):
         """Checks if the token exists.
 
@@ -650,14 +651,14 @@ class FA2(sp.Contract):
         # Return true if the token exists
         sp.result(token_id < self.data.counter)
 
-    @ sp.onchain_view(pure=True)
+    @sp.onchain_view(pure=True)
     def count_tokens(self):
         """Returns how many tokens are in this FA2 contract.
 
         """
         sp.result(self.data.counter)
 
-    @ sp.onchain_view(pure=True)
+    @sp.onchain_view(pure=True)
     def get_balance(self, params):
         """Returns the owner token balance.
 
@@ -691,7 +692,7 @@ class FA2(sp.Contract):
             with sp.else_():
                 sp.result(0)
 
-    @ sp.onchain_view(pure=True)
+    @sp.onchain_view(pure=True)
     def total_supply(self, token_id):
         """Returns the total supply for a given token id.
 
@@ -705,14 +706,14 @@ class FA2(sp.Contract):
         # Return the token total supply
         sp.result(1)
 
-    @ sp.onchain_view(pure=True)
+    @sp.onchain_view(pure=True)
     def all_tokens(self):
         """Returns a list with all the token ids.
 
         """
         sp.result(sp.range(0, self.data.counter))
 
-    @ sp.onchain_view(pure=True)
+    @sp.onchain_view(pure=True)
     def is_operator(self, params):
         """Checks if a given token operator exists.
 
@@ -726,7 +727,7 @@ class FA2(sp.Contract):
         # Return true if the token operator exists
         sp.result(self.data.operators.contains(params))
 
-    @ sp.onchain_view(pure=True)
+    @sp.onchain_view(pure=True)
     def token_metadata(self, token_id):
         """Returns the token metadata.
 
@@ -756,7 +757,7 @@ class FA2(sp.Contract):
         # Return the token metadata
         sp.result(token_metadata_record)
 
-    @ sp.onchain_view(pure=True)
+    @sp.onchain_view(pure=True)
     def token_royalties(self, token_id):
         """Returns the token royalties information.
 
@@ -773,4 +774,4 @@ class FA2(sp.Contract):
 
 sp.add_compilation_target("fa2", FA2(
     administrator=sp.address("tz1ahsDNFzukj51hVpW626qH7Ug9HeUVQDNG"),
-    metadata=sp.utils.metadata_of_url("ipfs://bafkreih4ghxml7erkz5iz5xf2g7oapsqr473zabhl4s5g2opffyh3cg6m4")))
+    metadata=sp.utils.metadata_of_url("ipfs://bafkreiglynhdvgigvj2gxcdtbcooromcr6lokblwhqe2cj7hbgnukhjzjq")))
