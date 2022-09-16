@@ -2,7 +2,7 @@ import smartpy as sp
 
 
 class FA2(sp.Contract):
-    """This contract tries to simplify and exented the FA2 contract template
+    """This contract tries to simplify and extend the FA2 contract template
     example in smartpy.io v0.9.1.
 
     The FA2 template was originally developed by Seb Mondet:
@@ -42,7 +42,7 @@ class FA2(sp.Contract):
         """
         # Define the contract storage data types for clarity
         self.init_type(sp.TRecord(
-            # The contract administrador
+            # The contract administrator
             administrator=sp.TAddress,
             # The contract metadata
             metadata=sp.TBigMap(sp.TString, sp.TBytes),
@@ -611,12 +611,12 @@ class FA2(sp.Contract):
     @sp.entry_point
     def accept_administrator(self):
         """The proposed administrator accepts the contract administrator
-        responsabilities.
+        responsibilities.
 
         """
         # Check that the proposed administrator executed the entry point
         sp.verify(sp.sender == self.data.proposed_administrator.open_some(
-            message="FA_NO_NEW_ADMIN"), message="FA_NOT_PROPOSED_ADMIN")
+            message="FA2_NO_NEW_ADMIN"), message="FA2_NOT_PROPOSED_ADMIN")
 
         # Set the new administrator address
         self.data.administrator = sp.sender

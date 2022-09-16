@@ -72,6 +72,12 @@ compile_all:
 	$(call COMPILE, daoGovernance)
 	$(call COMPILE, daoTreasury)
 	$(call COMPILE, representatives)
+	$(call COMPILE, harbergerToken)
+	$(call COMPILE, harbergerFee)
+	$(call COMPILE, harbergerMinter)
+	$(call COMPILE, subscriptionToken)
+	$(call COMPILE, subscriptionFee)
+	$(call COMPILE, subscriptionsMarketplace)
 
 test_all:
 	$(call TEST, teiaMarketplace_v1)
