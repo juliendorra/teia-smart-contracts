@@ -1,3 +1,4 @@
+from typing import Collection
 import smartpy as sp
 
 
@@ -374,7 +375,12 @@ class FA2(sp.Contract):
                 self.is_operator,
                 self.token_metadata,
                 self.token_royalties,
-                self.count_tokens],
+                self.last_token_id,
+                self.last_collection_id,
+                self.all_collections,
+                self.list_collection_cids,
+                self.collection_first_last_tokens,
+            ],
             "permissions": {
                 "operator": "owner-or-operator-transfer",
                 "receiver": "owner-no-hook",
@@ -652,11 +658,16 @@ class FA2(sp.Contract):
         sp.result(token_id < self.data.counter)
 
     @sp.onchain_view(pure=True)
-    def count_tokens(self):
-        """Returns how many tokens are in this FA2 contract.
+    def last_token_id(self):
+        """Returns the last token id.
+
+            The counter is incremented just after minting,
+            and thus it is 1-indexed: it always equal the number of tokens
+            but tokens ids are 0-indexed, so we substract 1
 
         """
-        sp.result(self.data.counter)
+        sp.verify(self.data.counter > 0, message="FA2_NO_TOKEN")
+        sp.result(sp.as_nat(self.data.counter - 1))
 
     @sp.onchain_view(pure=True)
     def get_balance(self, params):
@@ -770,6 +781,123 @@ class FA2(sp.Contract):
 
         # Return the token royalties information
         sp.result(self.data.collection_royalties[collection_id])
+
+    ## Collection views ##
+
+    def check_minted_at_least_one_collection(self):
+        # Checks that the contract has been used for minting at least one collection
+        sp.verify(self.data.collection_counter > 0,
+                  message="NO_COLLECTION_MINTED_EMPTY_CONTRACT")
+
+    @sp.onchain_view(pure=True)
+    def last_collection_id(self):
+        """Returns the last collection id.
+
+            The counter is incremented after minting, and thus 1-indexed
+            but collections are 0-indexed
+
+        """
+        self.check_minted_at_least_one_collection()
+
+        sp.result(self.data.collection_counter - 1)
+
+    @sp.onchain_view(pure=True)
+    def all_collections(self):
+        """Returns a list with all the collection ids.
+
+        """
+        self.check_minted_at_least_one_collection()
+        # sp.range returns first included, last excluded
+        sp.result(sp.range(0, self.data.collection_counter))
+
+    @sp.onchain_view(pure=True)
+    def list_collection_cids(self, params):
+        """Returns collection base CIDs between start (first collection index) and end (last collection index)
+
+        """
+        # Define the input parameter data type
+        sp.set_type(params, sp.TRecord(start=sp.TNat, end=sp.TNat)).layout(
+            ("start", "end"))
+
+        COLLECTIONID_AND_CID_TYPE = sp.TRecord(
+            collectionid=sp.TNat,
+            cid=sp.TBytes,
+        ).layout(("collectionid", "cid"))
+
+        self.check_minted_at_least_one_collection()
+
+        # cids are stored as hex encoded bytes from utf8 strings
+        collection_cids_set = sp.local(
+            "collection_cids_set", sp.set(l=[], t=COLLECTIONID_AND_CID_TYPE))
+
+        # the counter is incremented after minting, and thus 1-indexed
+        # but collections are 0-indexed
+        last_collection_index = sp.as_nat(self.data.collection_counter - 1)
+
+        start = sp.local("start", 0)
+        end = sp.local("end", 0)
+
+        # Check the start collection is not beyond the last collection
+        sp.verify(params.start <= last_collection_index,
+                  message="START_IS_BEYOND_LAST_COLLECTION")
+
+        start.value = params.start
+
+        # Capping end to last collection => TO TEST
+        with sp.if_(params.end > self.data.collection_counter):
+            end.value = last_collection_index
+        with sp.else_():
+            end.value = params.end
+
+        # Check if start collection is beyond last collection
+        sp.verify(start.value <= end.value,
+                  message="RANGE_INVERTED_START_GREATER_THAN_END")
+
+        # could return just one collection if start == end
+        # sp.range is (inclusive, exclusive)
+        all_collection_ids = sp.range(start.value, end.value + 1)
+
+        with sp.for_("collection_id", all_collection_ids) as collection_id:
+
+            base_cid = self.data.collection_base_url[collection_id]
+
+            collection_cids_set.value.add(sp.record(
+                collectionid=collection_id,
+                cid=base_cid))
+
+        # Return the token metadata
+        sp.result(collection_cids_set.value)
+
+    @sp.onchain_view(pure=True)
+    def collection_first_last_tokens(self, collection_id):
+        """Returns the first and last token ids for a collection.
+
+        """
+        # Define the input parameter data type
+        sp.set_type(collection_id, sp.TNat)
+
+        # Check that the collection exists
+        sp.verify(collection_id < self.data.collection_counter,
+                  message="COLLECTION_UNDEFINED")
+
+        collection_start_token_id = self.data.collection_start_id[collection_id]
+
+        collection_end_token_id = sp.local("collection_end_id", 0)
+
+        # Check if this is the last collection
+        with sp.if_(collection_id == sp.as_nat(self.data.collection_counter - 1)):
+            # then the last token id of the collection is... the last token id
+            collection_end_token_id.value = sp.as_nat(self.data.counter - 1)
+        with sp.else_():
+            # else the last token id of the collection is one before the next collection's first token
+            collection_end_token_id.value = sp.as_nat(
+                self.data.collection_start_id[collection_id+1] - 1)
+
+        # Return the token metadata
+        sp.result(sp.record(
+                  first=collection_start_token_id,
+                  last=collection_end_token_id.value)
+                  )
 
 
 sp.add_compilation_target("fa2", FA2(

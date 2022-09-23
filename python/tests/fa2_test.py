@@ -120,11 +120,133 @@ def test_mint_multiple():
     scenario.verify(fa2.token_exists(1))
     scenario.verify(~fa2.token_exists(2))
     scenario.verify(~fa2.token_exists(3))
-    scenario.verify(fa2.count_tokens() == 2)
+    scenario.verify(fa2.last_token_id() == 1)
     scenario.verify(sp.len(fa2.all_tokens()) == 2)
 
 
-@sp.add_test(name="Test transfer")
+@sp.add_test(name="Test collection views")
+def test_collection_views():
+    # Get the test environment
+    testEnvironment = get_test_environment()
+    scenario = testEnvironment["scenario"]
+    admin = testEnvironment["admin"]
+    user1 = testEnvironment["user1"]
+    fa2 = testEnvironment["fa2"]
+
+    # check that empty contract views fail
+
+    collection_range = sp.record(
+        start=0,
+        end=0)
+
+    sp.is_failing(fa2.last_token_id())
+    sp.is_failing(fa2.last_collection_id())
+    sp.is_failing(fa2.all_collections())
+    sp.is_failing(fa2.list_collection_cids(collection_range))
+
+    # mint 2 collections of 256 tokens
+    editions = 1  # editions are fixed in contract to 1!
+    total = 256
+    base = []
+    base.append(sp.utils.bytes_of_string(
+        "ipfs://bafybeig6n47ha7iww6nawplbpk5unvrgyjdbbaqfm4sslgkx3xxbvv43pu/"))
+    royalties = sp.record(
+        minter=sp.record(address=user1.address, royalties=0),
+        creator=sp.record(address=user1.address, royalties=50))
+    fa2.mint_collection(
+        total=total,
+        base=base[0],
+        royalties=royalties).run(sender=admin)
+    base.append(sp.utils.bytes_of_string(
+        "ipfs://bafybeia2il256fmpk4tlgan57qxnxpqitlwwm2bg6ia3brvijw2ierq33q/"))
+    fa2.mint_collection(
+        total=total,
+        base=base[1],
+        royalties=royalties).run(sender=admin)
+
+    # Check that the contract information has been updated
+    # first token minted
+    scenario.verify(fa2.get_balance(
+        sp.record(owner=user1.address, token_id=0)) == editions)
+    scenario.verify(fa2.total_supply(0) == editions)
+    # last token minted
+    scenario.verify(fa2.get_balance(
+        sp.record(owner=user1.address, token_id=511)) == editions)
+    scenario.verify(fa2.total_supply(511) == editions)
+
+    # Check that the metadata URL returned is a combination of base and name
+    scenario.verify(fa2.token_metadata(
+        0).token_info[""] == base[0]+sp.utils.bytes_of_string("0"))
+
+    # test the second token of the second collection (from 256 to 511)
+    scenario.verify(fa2.token_metadata(
+        257).token_info[""] == base[1]+sp.utils.bytes_of_string("1"))
+
+    """
+                fa2.last_token_id,
+                fa2.last_collection_id,
+                fa2.all_collections,
+                fa2.list_collection_cids,
+                fa2.collection_first_last_tokens,
+    """
+
+    # checking that collection counter has been properly updated
+    scenario.verify(fa2.data.collection_counter == 2)
+
+    scenario.verify(fa2.last_token_id() == 511)
+    scenario.verify(fa2.last_collection_id() == 1)
+    scenario.verify_equal(fa2.all_collections(), [0, 1])
+
+    # checking that we can list cids for collections
+
+    collection_range = sp.record(start=0, end=1)
+
+    single_collection_range = sp.record(start=1, end=1)
+
+    wrong_collection_range = sp.record(
+        start=3,
+        end=3)
+
+    inverted_collection_range = sp.record(
+        start=1,
+        end=0)
+
+    collection_cids = fa2.list_collection_cids(collection_range)
+
+    scenario.verify(sp.len(collection_cids) == 2)
+
+    scenario.verify(collection_cids.contains(
+        sp.record(collectionid=0, cid=base[0]))
+    )
+
+    scenario.verify(collection_cids.contains(
+        sp.record(collectionid=1, cid=base[1]))
+    )
+
+    collection_cid_single = fa2.list_collection_cids(single_collection_range)
+
+    scenario.verify(sp.len(collection_cid_single) == 1)
+
+    scenario.verify(collection_cid_single.contains(
+        sp.record(collectionid=1, cid=base[1]))
+    )
+
+    sp.is_failing(~fa2.list_collection_cids(wrong_collection_range))
+    sp.is_failing(~fa2.list_collection_cids(inverted_collection_range))
+
+    # checkin that we can get the first and last token id of a collection
+    # collection 0: first=0,last=255
+
+    scenario.verify(fa2.collection_first_last_tokens(0).first == 0)
+    scenario.verify(fa2.collection_first_last_tokens(0).last == 255)
+
+    scenario.verify(fa2.collection_first_last_tokens(1).first == 256)
+    scenario.verify(fa2.collection_first_last_tokens(1).last == 511)
+
+    sp.is_failing(fa2.collection_first_last_tokens(3))
+
+
+@ sp.add_test(name="Test transfer")
 def test_transfer():
     # Get the test environment
     testEnvironment = get_test_environment()
@@ -241,7 +363,7 @@ def test_transfer():
     scenario.verify(fa2.total_supply(0) == editions)
 
 
-@sp.add_test(name="Test complex transfer")
+@ sp.add_test(name="Test complex transfer")
 def test_complex_transfer():
     # Get the test environment
     testEnvironment = get_test_environment()
@@ -412,7 +534,7 @@ def test_complex_transfer():
         sp.record(owner=user3.address, token_id=1)) == 0)
 
 
-@sp.add_test(name="Test balance of")
+@ sp.add_test(name="Test balance of")
 def test_balance_of():
     # Get the test environment
     testEnvironment = get_test_environment()
@@ -503,7 +625,7 @@ def test_balance_of():
     scenario.verify(dummyContract.data.balances[(user3.address, 1)] == 0)
 
 
-@sp.add_test(name="Test update operators")
+@ sp.add_test(name="Test update operators")
 def test_update_operators():
     # Get the test environment
     testEnvironment = get_test_environment()
@@ -644,7 +766,7 @@ def test_update_operators():
             token_id=0))]).run(valid=False, sender=admin)
 
 
-@sp.add_test(name="Test transfer and accept administrator")
+@ sp.add_test(name="Test transfer and accept administrator")
 def test_transfer_and_accept_administrator():
     # Get the test environment
     testEnvironment = get_test_environment()
@@ -686,7 +808,7 @@ def test_transfer_and_accept_administrator():
                     == new_administrator)
 
 
-@sp.add_test(name="Test set metadata")
+@ sp.add_test(name="Test set metadata")
 def test_set_metadata():
     # Get the test environment
     testEnvironment = get_test_environment()
