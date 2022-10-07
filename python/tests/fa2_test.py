@@ -246,6 +246,102 @@ def test_collection_views():
     sp.is_failing(fa2.collection_first_last_tokens(3))
 
 
+@sp.add_test(name="Test collection transfer")
+def test_collection_transfer():
+    # Get the test environment
+    testEnvironment = get_test_environment()
+    scenario = testEnvironment["scenario"]
+    admin = testEnvironment["admin"]
+    user1 = testEnvironment["user1"]
+    user2 = testEnvironment["user2"]
+    user3 = testEnvironment["user3"]
+    fa2 = testEnvironment["fa2"]
+
+    # check that transfer on empty contract fail
+    fa2.transfer_collection(
+        sp.record(
+            from_=user1.address,
+            to_=user1.address,
+            collection_id=0
+        )
+    ).run(valid=False, sender=user1)
+
+    # mint 2 collections of 256 tokens
+    editions = 1  # editions are fixed in contract to 1!
+    total = 256
+
+    base = []
+
+    base.append(sp.utils.bytes_of_string(
+        "ipfs://bafybeig6n47ha7iww6nawplbpk5unvrgyjdbbaqfm4sslgkx3xxbvv43pu/"))
+    royalties = sp.record(
+        minter=sp.record(address=user1.address, royalties=0),
+        creator=sp.record(address=user1.address, royalties=50))
+
+    fa2.mint_collection(
+        total=total,
+        base=base[0],
+        royalties=royalties).run(sender=admin)
+
+    base.append(sp.utils.bytes_of_string(
+        "ipfs://bafybeia2il256fmpk4tlgan57qxnxpqitlwwm2bg6ia3brvijw2ierq33q/"))
+    fa2.mint_collection(
+        total=total,
+        base=base[1],
+        royalties=royalties).run(sender=admin)
+
+    # Check that we can transfer collection to another user
+    fa2.transfer_collection(
+        sp.record(
+            from_=user1.address,
+            to_=user2.address,
+            collection_id=0
+        )
+    ).run(sender=user1)
+
+    # Check that the contract information has been updated
+    # And user2 is the new owner of the collection
+
+    for i in range(0, 255):
+        scenario.verify(fa2.get_balance(
+            sp.record(owner=user2.address, token_id=i)) == editions)
+
+    # Check that another user cannot transfer a collection
+    fa2.transfer_collection(
+        sp.record(
+            from_=user1.address,
+            to_=user3.address,
+            collection_id=0
+        )
+    ).run(valid=False, sender=user1)
+
+    # Check that the collection owner can transfer one token
+    # Token 278 is from collection with id 1
+    fa2.transfer([
+        sp.record(
+            from_=user1.address,
+            txs=[sp.record(to_=user3.address, token_id=278, amount=editions)])
+    ]).run(sender=user1)
+
+    # Check that the contract information has been updated
+    scenario.verify(fa2.get_balance(
+        sp.record(owner=user1.address, token_id=278)) == 0)
+    scenario.verify(fa2.get_balance(
+        sp.record(owner=user3.address, token_id=278)) == editions)
+    scenario.verify(fa2.total_supply(0) == editions)
+
+    # Check that collection transfer is now impossible
+    # as the collection is not fresh anymore
+    # but part lazy ledger, part traditional ledger
+    fa2.transfer_collection(
+        sp.record(
+            from_=user1.address,
+            to_=user3.address,
+            collection_id=1
+        )
+    ).run(valid=False, sender=user1)
+
+
 @ sp.add_test(name="Test transfer")
 def test_transfer():
     # Get the test environment

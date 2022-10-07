@@ -1,4 +1,3 @@
-from typing import Collection
 import smartpy as sp
 
 
@@ -63,6 +62,8 @@ class FA2(sp.Contract):
             collection_counter=sp.TNat,
             # The big map with the first token_id of each collection
             collection_start_id=sp.TBigMap(sp.TNat, sp.TNat),
+            # The big map tracking the state of collections
+            collection_not_fresh=sp.TBigMap(sp.TNat, sp.TUnit),
 
             # The big map with the collection royalties for the minter and creators
             collection_royalties=sp.TBigMap(
@@ -88,6 +89,7 @@ class FA2(sp.Contract):
             token_collection=sp.big_map(),
             collection_base_url=sp.big_map(),
             collection_start_id=sp.big_map(),
+            collection_not_fresh=sp.big_map(),
             collection_royalties=sp.big_map(),
             operators=sp.big_map(),
             proposed_administrator=sp.none,
@@ -404,6 +406,14 @@ class FA2(sp.Contract):
         """
         sp.verify(token_id < self.data.counter, message="FA2_TOKEN_UNDEFINED")
 
+    def check_collection_exists(self, collection_id):
+        """ Check that the collection exists
+
+        """
+        # Check that the collection exists
+        sp.verify(collection_id < self.data.collection_counter,
+                  message="COLLECTION_UNDEFINED")
+
     @sp.entry_point
     def mint_collection(self, params):
         """Mints several new tokens at once.
@@ -513,6 +523,52 @@ class FA2(sp.Contract):
 
                 # Add the new owner to the token ledger
                 self.data.ledger[token_id] = tx.to_
+
+                # Mark the collection as not fresh anymore
+                self.data.collection_not_fresh[collection_id] = sp.unit
+
+    @sp.entry_point
+    def transfer_collection(self, params):
+        """Executes the transfer of a collection.
+        This ONLY transfer fresh, untouched lazy ledger collection,
+        at the exclusion of collections that have already transfered tokens 
+        (tokens with a traditional ledger entry created)
+        The purpose of this limitation is to avoid corner cases and simplify the model:
+        you can either transfer 
+         - a whole, fresh collection (cheap), 
+         - or single tokens (traditional cost)
+
+        This entry point is used by the marketplace contract for bulk swapping a whole collection
+
+        """
+        # Define the input parameter data type
+        sp.set_type(params, sp.TRecord(
+                    from_=sp.TAddress,
+                    to_=sp.TAddress,
+                    collection_id=sp.TNat).layout(
+                        ("from_", ("to_", "collection_id"))
+        )
+        )
+
+        # Check that the collection is
+        self.check_collection_exists(params.collection_id)
+
+        # Check that the collection is fresh (no tokens in standard ledger)
+        sp.verify(~self.data.collection_not_fresh.contains(params.collection_id),
+                  message="COLLECTION_NOT_FRESH_PLEASE_TRANSFER_BY_TOKENS")
+
+        declared_owner = sp.compute(params.from_)
+
+        # Check that the declared owner minted the collection
+        sp.verify(self.data.collection_ledger[params.collection_id] == declared_owner,
+                  message="NOT_COLLECTION_OWNER")
+
+        # Check that the sender is owner
+        sp.verify(sp.sender == declared_owner,
+                  message="NOT_COLLECTION_OWNER")
+
+        # Add the new owner to the token ledger
+        self.data.collection_ledger[params.collection_id] = params.to_
 
     @sp.entry_point
     def balance_of(self, params):
