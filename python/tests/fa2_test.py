@@ -290,7 +290,7 @@ def test_collection_transfer():
         base=base[1],
         royalties=royalties).run(sender=admin)
 
-    # Check that we can transfer collection to another user
+    # Check that we can transfer collection 0 to user 2
     fa2.transfer_collection(
         sp.record(
             from_=user1.address,
@@ -300,13 +300,13 @@ def test_collection_transfer():
     ).run(sender=user1)
 
     # Check that the contract information has been updated
-    # And user2 is the new owner of the collection
+    # And user2 is the now owner of collection 0
 
     for i in range(0, 255):
         scenario.verify(fa2.get_balance(
             sp.record(owner=user2.address, token_id=i)) == editions)
 
-    # Check that another user cannot transfer a collection
+    # Check that user 1 cannot transfer collection 0 to user 3
     fa2.transfer_collection(
         sp.record(
             from_=user1.address,
@@ -314,6 +314,79 @@ def test_collection_transfer():
             collection_id=0
         )
     ).run(valid=False, sender=user1)
+
+    # User 2 make user 3 operator of their collection 0
+    fa2.update_collection_operators([sp.variant("add_operator", sp.record(
+        owner=user2.address,
+        operator=user3.address,
+        collection_id=0))]).run(sender=user2)
+
+    # Check that contract has been updated with user 3 as operator of collection 0
+    scenario.verify(fa2.is_collection_operator(
+        sp.record(owner=user2.address, operator=user3.address, collection_id=0)
+    ) == True)
+
+    # check that User 1 cannot add themselves as operator of collection 0
+    fa2.update_collection_operators([sp.variant("add_operator", sp.record(
+        owner=user2.address,
+        operator=user1.address,
+        collection_id=0))]
+    ).run(valid=False, sender=user1)
+
+    # check that User 1 cannot add user3 as operator of collection 0
+    fa2.update_collection_operators([sp.variant("add_operator", sp.record(
+        owner=user2.address,
+        operator=user3.address,
+        collection_id=0))]
+    ).run(valid=False, sender=user1)
+
+    # Check that user 3, as operator of the fresh collection,
+    # can now transfer collection 0 to user 1
+    fa2.transfer_collection(
+        sp.record(
+            from_=user2.address,
+            to_=user1.address,
+            collection_id=0
+        )
+    ).run(sender=user3)
+
+    # Check that contract information has been updated
+    # And user1 is the new owner of collection 0
+    for i in range(0, 255):
+        scenario.verify(fa2.get_balance(
+            sp.record(owner=user1.address, token_id=i)) == editions)
+
+    # User 1 make user 3 operator of their collection 0
+    fa2.update_collection_operators([sp.variant("add_operator", sp.record(
+        owner=user1.address,
+        operator=user3.address,
+        collection_id=0))]).run(sender=user1)
+
+    # Check that contract has been updated with user 3 as operator of collection 0
+    scenario.verify(fa2.is_collection_operator(
+        sp.record(owner=user1.address, operator=user3.address, collection_id=0)
+    ) == True)
+
+    # remove user 3 as operator of collection 0, add user 2
+    fa2.update_collection_operators([
+        sp.variant("remove_operator", sp.record(
+            owner=user1.address,
+            operator=user3.address,
+            collection_id=0)),
+        sp.variant("add_operator", sp.record(
+            owner=user1.address,
+            operator=user2.address,
+            collection_id=0))
+    ]).run(sender=user1)
+
+    # Check that contract has been updated with user 2 as operator of collection 0
+    # user 3 removed
+    scenario.verify(fa2.is_collection_operator(
+        sp.record(owner=user1.address, operator=user3.address, collection_id=0)
+    ) == False)
+    scenario.verify(fa2.is_collection_operator(
+        sp.record(owner=user1.address, operator=user2.address, collection_id=0)
+    ) == True)
 
     # Check that the collection owner can transfer one token
     # Token 278 is from collection with id 1
@@ -323,14 +396,22 @@ def test_collection_transfer():
             txs=[sp.record(to_=user3.address, token_id=278, amount=editions)])
     ]).run(sender=user1)
 
+    # Check that collection operator cannot transfer single token
+    # Token 120 is from collection with id 0
+    fa2.transfer([
+        sp.record(
+            from_=user1.address,
+            txs=[sp.record(to_=user3.address, token_id=120, amount=editions)])
+    ]).run(valid=False, sender=user2)
+
     # Check that the contract information has been updated
     scenario.verify(fa2.get_balance(
         sp.record(owner=user1.address, token_id=278)) == 0)
     scenario.verify(fa2.get_balance(
         sp.record(owner=user3.address, token_id=278)) == editions)
-    scenario.verify(fa2.total_supply(0) == editions)
+    scenario.verify(fa2.total_supply(278) == editions)
 
-    # Check that collection transfer is now impossible
+    # Check that collection 1 transfer is now impossible
     # as the collection is not fresh anymore
     # but part lazy ledger, part traditional ledger
     fa2.transfer_collection(

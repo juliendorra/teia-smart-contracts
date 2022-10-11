@@ -36,6 +36,15 @@ class FA2(sp.Contract):
         token_id=sp.TNat).layout(
             ("owner", ("operator", "token_id")))
 
+    COLLECTION_OPERATOR_KEY_TYPE = sp.TRecord(
+        # The owner of collection
+        owner=sp.TAddress,
+        # The operator allowed by the owner to transfer their collection
+        operator=sp.TAddress,
+        # The collection id
+        collection_id=sp.TNat).layout(
+        ("owner", ("operator", "collection_id")))
+
     def __init__(self, administrator, metadata):
         """Initializes the contract.
 
@@ -68,6 +77,10 @@ class FA2(sp.Contract):
             # The big map with the collection royalties for the minter and creators
             collection_royalties=sp.TBigMap(
                 sp.TNat, FA2.TOKEN_ROYALTIES_VALUE_TYPE),
+            # The big map with the collecrion operators
+            collection_operators=sp.TBigMap(
+                FA2.COLLECTION_OPERATOR_KEY_TYPE, sp.TUnit),
+
             # The big map with the tokens operators
             operators=sp.TBigMap(FA2.OPERATOR_KEY_TYPE, sp.TUnit),
             # The proposed new administrator address
@@ -91,6 +104,7 @@ class FA2(sp.Contract):
             collection_start_id=sp.big_map(),
             collection_not_fresh=sp.big_map(),
             collection_royalties=sp.big_map(),
+            collection_operators=sp.big_map(),
             operators=sp.big_map(),
             proposed_administrator=sp.none,
             counter=0,
@@ -550,22 +564,27 @@ class FA2(sp.Contract):
         )
         )
 
-        # Check that the collection is
+        # Check that the collection exists
         self.check_collection_exists(params.collection_id)
 
         # Check that the collection is fresh (no tokens in standard ledger)
         sp.verify(~self.data.collection_not_fresh.contains(params.collection_id),
-                  message="COLLECTION_NOT_FRESH_PLEASE_TRANSFER_BY_TOKENS")
+                  message="COLLECTION_NOT_FRESH_PLEASE_TRANSFER_SINGLE_TOKENS")
 
         declared_owner = sp.compute(params.from_)
 
         # Check that the declared owner minted the collection
         sp.verify(self.data.collection_ledger[params.collection_id] == declared_owner,
-                  message="NOT_COLLECTION_OWNER")
+                  message="COLLECTION_NOT_OWNER")
 
-        # Check that the sender is owner
-        sp.verify(sp.sender == declared_owner,
-                  message="NOT_COLLECTION_OWNER")
+        # Check that the sender is one of the collection operators
+        sp.verify(
+            (sp.sender == declared_owner) |
+            self.data.collection_operators.contains(sp.record(
+                owner=declared_owner,
+                operator=sp.sender,
+                collection_id=params.collection_id)),
+            message="COLLECTION_NOT_OPERATOR")
 
         # Add the new owner to the token ledger
         self.data.collection_ledger[params.collection_id] = params.to_
@@ -624,7 +643,7 @@ class FA2(sp.Contract):
 
     @sp.entry_point
     def update_operators(self, params):
-        """Updates a list of operators.
+        """Updates a list of token operators.
 
         """
         # Define the input parameter data type
@@ -655,6 +674,40 @@ class FA2(sp.Contract):
 
                     # Remove the operator from the operators big map
                     del self.data.operators[operator_key]
+
+    @sp.entry_point
+    def update_collection_operators(self, params):
+        """Updates a list of collection operators.
+
+        """
+        # Define the input parameter data type
+        sp.set_type(params, sp.TList(sp.TVariant(
+            add_operator=FA2.COLLECTION_OPERATOR_KEY_TYPE,
+            remove_operator=FA2.COLLECTION_OPERATOR_KEY_TYPE)))
+
+        # Loop over the list of update operators
+        with sp.for_("update_operator", params) as update_operator:
+            with update_operator.match_cases() as arg:
+                with arg.match("add_operator") as operator_key:
+                    # Check that the token exists
+                    self.check_collection_exists(operator_key.collection_id)
+
+                    # Check that the sender is the token owner
+                    sp.verify(sp.sender == operator_key.owner,
+                              message="FA2_SENDER_IS_NOT_OWNER")
+
+                    # Add the new operator to the operators big map
+                    self.data.collection_operators[operator_key] = sp.unit
+                with arg.match("remove_operator") as operator_key:
+                    # Check that the token exists
+                    self.check_collection_exists(operator_key.collection_id)
+
+                    # Check that the sender is the token owner
+                    sp.verify(sp.sender == operator_key.owner,
+                              message="FA2_SENDER_IS_NOT_OWNER")
+
+                    # Remove the operator from the operators big map
+                    del self.data.collection_operators[operator_key]
 
     @sp.entry_point
     def transfer_administrator(self, proposed_administrator):
@@ -793,6 +846,20 @@ class FA2(sp.Contract):
 
         # Return true if the token operator exists
         sp.result(self.data.operators.contains(params))
+
+    @sp.onchain_view(pure=True)
+    def is_collection_operator(self, params):
+        """Checks if a given token operator exists.
+
+        """
+        # Define the input parameter data type
+        sp.set_type(params, FA2.COLLECTION_OPERATOR_KEY_TYPE)
+
+        # Check that the collection exists
+        self.check_token_exists(params.collection_id)
+
+        # Return true if the operator exists
+        sp.result(self.data.collection_operators.contains(params))
 
     @sp.onchain_view(pure=True)
     def token_metadata(self, token_id):
