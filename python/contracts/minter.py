@@ -38,6 +38,26 @@ class Minter(sp.Contract):
             proposed_administrator=sp.none,
             paused=False)
 
+        # Build the TZIP-016 contract metadata
+        # This is helpful to get the off-chain views code in json format
+        contract_metadata = {
+            "name": "A basic minter contract for the extended FA2 token contract with collections",
+            "description": "This contract allows for batch minting of collections. "
+            "Based on Teia Community basic minter contract for the extended FA2 token contract.",
+            "version": "v1.0.0",
+            "authors": ["Teia Community <https://twitter.com/TeiaCommunity>"],
+            "homepage": "https://teia.art",
+            "source": {
+                "tools": ["SmartPy 0.10.1"],
+                "location": "https://github.com/teia-community/teia-smart-contracts/blob/main/python/contracts/minter.py"
+            },
+            "views": [
+                self.is_paused,
+            ]
+        }
+
+        self.init_metadata("contract_metadata", contract_metadata)
+
     def check_is_administrator(self):
         """Checks that the address that called the entry point is the contract
         administrator.
@@ -192,5 +212,6 @@ class Minter(sp.Contract):
 
 sp.add_compilation_target("minter", Minter(
     administrator=sp.address("tz1ahsDNFzukj51hVpW626qH7Ug9HeUVQDNG"),
-    metadata=sp.utils.metadata_of_url("ipfs://aaa"),
-    fa2=sp.address("KT1RcP4Q8dwHoRG6s18sCVE9BxCENukajbkV")))
+    metadata=sp.utils.metadata_of_url(
+        "ipfs://bafkreidaocrmumzcubzlz767mcxwmb7mhvorx54b5qzvnypmkeky3qbnke"),
+    fa2=sp.address("KT1SBUCG4B7qzW17HpMJmLFk4twpn3sYQked")))
