@@ -849,14 +849,14 @@ class FA2(sp.Contract):
 
     @sp.onchain_view(pure=True)
     def is_collection_operator(self, params):
-        """Checks if a given token operator exists.
+        """Checks if a given collection operator exists.
 
         """
         # Define the input parameter data type
         sp.set_type(params, FA2.COLLECTION_OPERATOR_KEY_TYPE)
 
         # Check that the collection exists
-        self.check_token_exists(params.collection_id)
+        self.check_collection_exists(params.collection_id)
 
         # Return true if the operator exists
         sp.result(self.data.collection_operators.contains(params))
