@@ -234,7 +234,7 @@ def test_collection_views():
     sp.is_failing(~fa2.list_collection_cids(wrong_collection_range))
     sp.is_failing(~fa2.list_collection_cids(inverted_collection_range))
 
-    # checkin that we can get the first and last token id of a collection
+    # check that we can get the first and last token id of a collection
     # collection 0: first=0,last=255
 
     scenario.verify(fa2.collection_first_last_tokens(0).first == 0)
@@ -245,6 +245,13 @@ def test_collection_views():
 
     sp.is_failing(fa2.collection_first_last_tokens(3))
 
+    # check that we can get the collection id for a token
+    scenario.verify(fa2.get_token_collection_id(0) == 0)
+    scenario.verify(fa2.get_token_collection_id(111) == 0)
+    scenario.verify(fa2.get_token_collection_id(255) == 0)
+    scenario.verify(fa2.get_token_collection_id(256) == 1)
+    scenario.verify(fa2.get_token_collection_id(300) == 1)
+    scenario.verify(fa2.get_token_collection_id(511) == 1)
 
 @sp.add_test(name="Test collection transfer")
 def test_collection_transfer():

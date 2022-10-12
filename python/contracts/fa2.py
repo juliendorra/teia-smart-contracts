@@ -1022,6 +1022,17 @@ class FA2(sp.Contract):
                   last=collection_end_token_id.value)
                   )
 
+    @sp.onchain_view(pure=True)
+    def get_token_collection_id(self, token_id):
+        """Returns the first and last token ids for a collection.
+
+        """
+        # Define the input parameter data type
+        sp.set_type(token_id, sp.TNat)
+
+        # Return the collection id from the collection map
+        sp.result(self.data.token_collection[token_id])
+
 
 sp.add_compilation_target("fa2", FA2(
     administrator=sp.address("tz1ahsDNFzukj51hVpW626qH7Ug9HeUVQDNG"),
