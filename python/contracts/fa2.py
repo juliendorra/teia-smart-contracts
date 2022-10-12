@@ -380,7 +380,7 @@ class FA2(sp.Contract):
             "authors": ["Teia Community <https://twitter.com/TeiaCommunity>"],
             "homepage": "https://teia.art",
             "source": {
-                "tools": ["SmartPy 0.9.1"],
+                "tools": ["SmartPy 0.10.1"],
                 "location": "https://github.com/teia-community/teia-smart-contracts/blob/main/python/contracts/fa2.py"
             },
             "interfaces": ["TZIP-012", "TZIP-016"],
