@@ -56,12 +56,15 @@ class FA2(sp.Contract):
             # The contract metadata
             metadata=sp.TBigMap(sp.TString, sp.TBytes),
             # The ledger big map where the tokens owners are listed
+            # It's a tzip-12, Single asset contract map
             ledger=sp.TBigMap(sp.TNat, sp.TAddress),
             # The big map where the tokens initial creators are listed when minted
+            # This is the lazy ledger map, and not part of tzip-12
             collection_ledger=sp.TBigMap(sp.TNat, sp.TAddress),
 
             # Collection management: storing the base url only once for a whole collection
             # The big map with the tokens collection IDs
+            # Keys are individual token id, value their collection id
             token_collection=sp.TBigMap(
                 sp.TNat, sp.TNat),
             # The big map with the collection base url
