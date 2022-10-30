@@ -916,6 +916,17 @@ class FA2(sp.Contract):
                   message="NO_COLLECTION_MINTED_EMPTY_CONTRACT")
 
     @sp.onchain_view(pure=True)
+    def collection_royalties(self, collection_id):
+        """Returns the token royalties information.
+
+        """
+        # Define the input parameter data type
+        sp.set_type(collection_id, sp.TNat)
+
+        # Return the token royalties information
+        sp.result(self.data.collection_royalties[collection_id])
+
+    @sp.onchain_view(pure=True)
     def last_collection_id(self):
         """Returns the last collection id.
 
