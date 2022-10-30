@@ -2,6 +2,7 @@ test fa2 contract:
 cd python
 ~/smartpy-cli/SmartPy.sh test tests/fa2_test.py ../output/tests/fa2 --html --purge
 ~/smartpy-cli/SmartPy.sh test tests/minter_test.py ../output/tests/minter --html --purge
+~/smartpy-cli/SmartPy.sh test tests/marketplace_test.py ../output/tests/marketplace --html --purge
 
 ### off chain views for FA2: metadata file
 
@@ -31,6 +32,15 @@ Once originated, change the FA2 contract address in the Minter contract, compile
 ~/smartpy-cli/SmartPy.sh compile python/contracts/minter.py output/contracts/minter --html --purge
 
 ~/smartpy-cli/SmartPy.sh originate-contract --code output/contracts/minter/minter/step_000_cont_0_contract.json --storage output/contracts/minter/minter/step_000_cont_0_storage.json --rpc https://rpc.ghostnet.teztnets.xyz
+
+Marketplace contract: change fa2 address, administrator address, and metadatata url.
+By default fee_recipient is the administrator. 
+It can be changed using the update_fee_recipient entry point.
+
+~/smartpy-cli/SmartPy.sh compile python/contracts/marketplace.py output/contracts/marketplace --html --purge
+
+~/smartpy-cli/SmartPy.sh originate-contract --code output/contracts/marketplace/marketplace/step_000_cont_0_contract.json --storage output/contracts/marketplace/marketplace/step_000_cont_0_storage.json --rpc https://rpc.ghostnet.teztnets.xyz
+
 
 ### addresses 
 
