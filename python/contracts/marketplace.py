@@ -103,6 +103,32 @@ class Marketplace(sp.Contract):
             swaps_paused=False,
             collects_paused=False)
 
+        # Build the TZIP-016 contract metadata
+        # This is helpful to get the off-chain views code in json format
+        contract_metadata = {
+            "name": "Modified marketplace contract for collections",
+            "description": "This contract allows for swapping whole collections of 1/1 tokens and single 1/1 tokens"
+            "Based on Teia Community marketplace contract",
+            "version": "v1.0.0",
+            "authors": ["Teia Community <https://twitter.com/TeiaCommunity>"],
+            "homepage": "https://teia.art",
+            "source": {
+                "tools": ["SmartPy 0.10.1"],
+                "location": "https://github.com/teia-community/teia-smart-contracts/blob/main/python/marketplace/fa2.py"
+            },
+            "views": [
+                self.get_administrator,
+                self.has_swap,
+                self.get_swap,
+                self.get_swaps_counter,
+                self.get_collection_swaps_counter,
+                self.get_fee,
+                self.get_fee_recipient,
+            ]
+        }
+
+        self.init_metadata("contract_metadata", contract_metadata)
+
     def check_is_administrator(self):
         """Checks that the address that called the entry point is the contract
         administrator.
@@ -906,6 +932,7 @@ class Marketplace(sp.Contract):
 
 sp.add_compilation_target("marketplace", Marketplace(
     administrator=sp.address("tz1ahsDNFzukj51hVpW626qH7Ug9HeUVQDNG"),
-    metadata=sp.utils.metadata_of_url("ipfs://aaa"),
-    fa2=sp.address("KT1Tc6ZCKMPkEj3j9CT9UH97iDvdXYmsDYRM"),
+    metadata=sp.utils.metadata_of_url(
+        "ipfs://bafkreifzjjdvpyiewz6cnj66v5lahnar2vppj2jfjejtgnwybh3u23fk6e"),
+    fa2=sp.address("KT1HKXQJo6Jt3Bt13h1fTEqCNov4N4X3w1t8"),
     fee=sp.nat(25)))
