@@ -399,6 +399,7 @@ class FA2(sp.Contract):
                 self.all_collections,
                 self.list_collection_cids,
                 self.collection_first_last_tokens,
+                self.get_token_collection_id,
             ],
             "permissions": {
                 "operator": "owner-or-operator-transfer",
