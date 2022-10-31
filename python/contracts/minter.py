@@ -214,4 +214,4 @@ sp.add_compilation_target("minter", Minter(
     administrator=sp.address("tz1ahsDNFzukj51hVpW626qH7Ug9HeUVQDNG"),
     metadata=sp.utils.metadata_of_url(
         "ipfs://bafkreidaocrmumzcubzlz767mcxwmb7mhvorx54b5qzvnypmkeky3qbnke"),
-    fa2=sp.address("KT1SBUCG4B7qzW17HpMJmLFk4twpn3sYQked")))
+    fa2=sp.address("KT1HKXQJo6Jt3Bt13h1fTEqCNov4N4X3w1t8")))
