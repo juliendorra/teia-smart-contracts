@@ -1051,4 +1051,4 @@ class FA2(sp.Contract):
 
 sp.add_compilation_target("fa2", FA2(
     administrator=sp.address("tz1ahsDNFzukj51hVpW626qH7Ug9HeUVQDNG"),
-    metadata=sp.utils.metadata_of_url("ipfs://bafkreibcagociaxq4eihkrlc5grdgt657t5mgji6lrraszfeaenke4eleq")))
+    metadata=sp.utils.metadata_of_url("ipfs://bafkreiblvqwqwfpraztyctkl6lkr4luhtbe7u3jxnchkplq655i2ccvblu")))
