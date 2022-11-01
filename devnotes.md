@@ -47,12 +47,13 @@ It can be changed using the update_fee_recipient entry point.
 tz1ahsDNFzukj51hVpW626qH7Ug9HeUVQDNG ithacanet testnet account
 Use it in fa2.py and minter.py as the administrator address
 
-FA2 contract on ithacanet: KT1SBUCG4B7qzW17HpMJmLFk4twpn3sYQked
+FA2 contract on ithacanet: KT1HKXQJo6Jt3Bt13h1fTEqCNov4N4X3w1t8
 Use it in minter.py as fa2 contract
 
-Minter contract on ithacanet:  KT1GiJKFFECRF5cxrqVYu9Wmioxp5D8nSVvd
+Minter contract on ithacanet:  KT1LDYSZC2hpQqR87zrba4R9SQfRq5mS1nty
 Call it from Taquito !!
 
+Marketplace contract on ithacanet:  KT1V71tMJaM2JiWnxQiNGWPahFgo1BvUywLj
 
 After Deploying the contracts, we need to set the minter contract as the admin of the FA2 contract. 
 Only the admin can mint tokens. That's why the minter contract should be the admin
